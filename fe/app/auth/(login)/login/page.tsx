@@ -45,7 +45,7 @@ const LoginPage = () => {
                     INTERLOGS
                   </div>
                   <div className="text-sm 2xl:text-base font-semibold text-blue-200 uppercase tracking-widest">
-                    PT PLN Nusantara Power UP Muara Tawar
+                    PT PLN Nusantara Power UP Sembalang
                   </div>
                 </div>
 

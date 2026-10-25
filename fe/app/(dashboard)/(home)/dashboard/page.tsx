@@ -4,7 +4,7 @@ import { getDictionary } from "@/app/dictionaries";
 
 export const metadata = getSeoMeta({
   title: "Dashboard",
-  description: "INTERLOGS UP Muara Tawar Dashboard",
+  description: "INTERLOGS UP Sembalang Dashboard",
 });
 const Dashboard = async () => {
   const trans = await getDictionary("en");

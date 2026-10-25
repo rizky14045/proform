@@ -58,7 +58,7 @@ export default function DashboardPageView({ trans }: DashboardPageViewProps) {
           request_number: "001/UPM/UPMT/2026",
           wo_number: "WO-2026-0891",
           prk_number: "PRK-2026-012",
-          title: "Pengadaan Spare Part Turbin Gas Blok 1 Muara Tawar",
+          title: "Pengadaan Spare Part Turbin Gas Blok 1 Sembalang",
           contract_type: "BARANG",
           priority: "URGENT",
           rab_amount: 4500000000,
@@ -147,7 +147,7 @@ export default function DashboardPageView({ trans }: DashboardPageViewProps) {
       case "TENDER_ACTIVE":
         return <Badge color="info" className="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">Proses Tender</Badge>;
       case "PO_ISSUED":
-        return <Badge color="primary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">PO Diterbitkan</Badge>;
+        return <Badge color="default" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">PO Diterbitkan</Badge>;
       case "BAST_SIGNED":
         return <Badge color="success" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">BAST Selesai</Badge>;
       case "TTE_COMPLETED":
@@ -189,13 +189,13 @@ export default function DashboardPageView({ trans }: DashboardPageViewProps) {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              INTERLOGS REVAMP V6.0 • UP MUARA TAWAR
+              INTERLOGS REVAMP V6.0 • UP SEMBALANG
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
               Sistem Terpadu Logistik & Pengadaan
             </h1>
             <p className="text-sm md:text-base text-blue-100 max-w-2xl">
-              PT PLN Nusantara Power UP Muara Tawar — Pengelolaan terintegrasi usulan permintaan, evaluasi enjiniring, proses tender transparan, penerimaan gudang, hingga sertifikasi TTE BSrE.
+              PT PLN Nusantara Power UP Sembalang — Pengelolaan terintegrasi usulan permintaan, evaluasi enjiniring, proses tender transparan, penerimaan gudang, hingga sertifikasi TTE BSrE.
             </p>
           </div>
 
@@ -297,7 +297,7 @@ export default function DashboardPageView({ trans }: DashboardPageViewProps) {
                 Pipeline Alur Logistik & Pengadaan Terpadu
               </CardTitle>
               <CardDescription>
-                Monitoring status siklus hidup pengadaan end-to-end sesuai SOP UP Muara Tawar
+                Monitoring status siklus hidup pengadaan end-to-end sesuai SOP UP Sembalang
               </CardDescription>
             </div>
             <Badge variant="outline" className="text-xs font-normal">
@@ -322,7 +322,7 @@ export default function DashboardPageView({ trans }: DashboardPageViewProps) {
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                         {stage.desc}
                       </span>
-                      <Badge variant="secondary" className="mt-1 text-[10px] px-1.5 py-0">
+                      <Badge color="secondary" className="mt-1 text-[10px] px-1.5 py-0">
                         {stage.count} Berkas
                       </Badge>
                     </div>

@@ -47,7 +47,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
             <div>
               <h2 className="text-lg font-bold text-foreground">Akses Modul Ditolak (403)</h2>
               <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                Akun Anda dengan peran <strong className="text-red-600 dark:text-red-400">{userRole}</strong> tidak memiliki otoritas untuk mengakses modul ini sesuai SOP INTERLOGS UP Muara Tawar.
+                Akun Anda dengan peran <strong className="text-red-600 dark:text-red-400">{userRole}</strong> tidak memiliki otoritas untuk mengakses modul ini sesuai SOP INTERLOGS UP Sembalang.
               </p>
             </div>
             <div className="pt-2">

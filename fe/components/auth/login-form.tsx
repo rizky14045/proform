@@ -91,7 +91,7 @@ const LogInForm = () => {
       });
 
       if (response?.ok) {
-        toast.success("Berhasil masuk ke INTERLOGS UP Muara Tawar");
+        toast.success("Berhasil masuk ke INTERLOGS UP Sembalang");
         window.location.assign("/dashboard");
         reset();
       } else {
@@ -114,7 +114,7 @@ const LogInForm = () => {
             INTERLOGS
           </div>
           <div className="text-xs 2xl:text-sm font-bold text-primary tracking-wide uppercase mt-1">
-            UP MUARA TAWAR
+            UP SEMBALANG
           </div>
         </div>
       </div>

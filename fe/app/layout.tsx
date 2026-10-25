@@ -14,8 +14,8 @@ import MountedProvider from "@/provider/mounted.provider";
 import fontInter from "@/config/font";
 
 export const metadata = getSeoMeta({
-  title: "INTERLOGS - PT PLN Nusantara Power UP Muara Tawar",
-  description: "Sistem Revamp Logistik & Pengadaan Terpadu PT PLN Nusantara Power UP Muara Tawar",
+  title: "INTERLOGS - PT PLN Nusantara Power UP Sembalang",
+  description: "Sistem Revamp Logistik & Pengadaan Terpadu PT PLN Nusantara Power UP Sembalang",
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -19,7 +19,7 @@ const SidebarLogo = ({ hovered }: { hovered?: boolean }) => {
                 INTERLOGS
               </span>
               <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate">
-                UP Muara Tawar
+                UP Sembalang
               </span>
             </div>
           )}

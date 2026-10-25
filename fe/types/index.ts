@@ -1,4 +1,4 @@
-// TypeScript Interfaces for INTERLOGS UP Muara Tawar
+// TypeScript Interfaces for INTERLOGS UP Sembalang
 // Synced with Go Backend PostgreSQL Models
 
 export interface AuditFields {

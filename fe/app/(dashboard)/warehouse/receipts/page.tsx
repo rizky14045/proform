@@ -44,7 +44,7 @@ export default function WarehouseReceiptsPage() {
               Penerimaan Barang Gudang (Goods Receipt)
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-1">
-              Pencatatan material dan peralatan yang masuk dari supplier di Gudang UP Muara Tawar
+              Pencatatan material dan peralatan yang masuk dari supplier di Gudang UP Sembalang
             </p>
           </div>
         </div>

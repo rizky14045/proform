@@ -11,7 +11,7 @@ import {
 } from "@/lib/appex-chart-options";
 
 interface ReportsChartProps {
-  series: ApexAxisChartSeries;
+  series: any;
   chartColor: string;
   height?: number;
 }

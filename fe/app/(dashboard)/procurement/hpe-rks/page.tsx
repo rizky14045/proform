@@ -74,7 +74,7 @@ export default function HpeRksPage() {
             Harga Perkiraan Enjiniring (HPE) & Dokumen RKS
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Penyusunan estimasi biaya teknis dan dokumen Rencana Kerja & Syarat-syarat (RKS) UP Muara Tawar
+            Penyusunan estimasi biaya teknis dan dokumen Rencana Kerja & Syarat-syarat (RKS) UP Sembalang
           </p>
         </div>
         <Button

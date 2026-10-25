@@ -24,7 +24,7 @@ export interface MenuItemProps {
   isHeader?: boolean;
 }
 
-// Master Menu INTERLOGS UP Muara Tawar (Diselaraskan dengan User Manual PT PLN Nusantara Power)
+// Master Menu INTERLOGS UP Sembalang (Diselaraskan dengan User Manual PT PLN Nusantara Power)
 // Semua menu dibuat flat (langsung link) tanpa child accordion
 export const interlogsMenus: MenuItemProps[] = [
   {

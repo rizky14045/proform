@@ -199,7 +199,7 @@ export default function PurchaseOrderPage() {
                         {item.title}
                       </td>
                       <td className="py-3.5 px-4 text-xs font-semibold">
-                        {item.supplier?.name || "PT Rekanan Muara Tawar"}
+                        {item.supplier?.name || "PT Rekanan Sembalang"}
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-primary">
                         {formatRupiah(item.total_amount || 0)}

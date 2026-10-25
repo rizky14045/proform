@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 const AddBlock = ({
   className,
-  title = "UP Muara Tawar",
+  title = "UP Sembalang",
   desc = "Sistem Revamp Terpadu Logistik & Pengadaan PT PLN Nusantara Power.",
 }: {
   className?: string;

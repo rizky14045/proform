@@ -2,8 +2,8 @@
 
 
 export const siteConfig = {
-  name: "INTERLOGS - PT PLN Nusantara Power UP Muara Tawar",
-  description: "Sistem Revamp Logistik & Pengadaan Terpadu PT PLN Nusantara Power UP Muara Tawar",
+  name: "INTERLOGS - PT PLN Nusantara Power UP Sembalang",
+  description: "Sistem Revamp Logistik & Pengadaan Terpadu PT PLN Nusantara Power UP Sembalang",
   theme: "blue",
   layout: "vertical",
   // semi-box, horizontal, vertical

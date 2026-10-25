@@ -122,7 +122,7 @@ export default function MasterRolesPage() {
               <Shield className="h-6 w-6 text-primary" /> Kode Jabatan (Roles)
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Definisi peran dan pembagian kewenangan workflow pengadaan di lingkungan UP Muara Tawar
+              Definisi peran dan pembagian kewenangan workflow pengadaan di lingkungan UP Sembalang
             </p>
           </div>
           <Button onClick={handleOpenCreate} className="gap-2 shrink-0">

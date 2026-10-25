@@ -130,7 +130,7 @@ export default function MasterSuppliersPage() {
               <Truck className="h-6 w-6 text-primary" /> Master Rekanan (Suppliers)
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Pendaftaran vendor, kontraktor, dan rekanan resmi penyedia barang/jasa UP Muara Tawar
+              Pendaftaran vendor, kontraktor, dan rekanan resmi penyedia barang/jasa UP Sembalang
             </p>
           </div>
           <Button onClick={handleOpenCreate} className="gap-2 shrink-0">

@@ -74,7 +74,7 @@ const StrokedGauge = ({ height = 350 }) => {
   };
   return (
     <Chart
-      options={options}
+      options={options as any}
       series={series}
       type="radialBar"
       height={height}

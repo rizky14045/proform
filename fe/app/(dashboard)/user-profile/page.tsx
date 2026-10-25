@@ -115,7 +115,7 @@ export default function UserProfilePage() {
             Profil Pengguna & Keamanan Akun
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-            Informasi identitas akun dan pembaruan kata sandi sistem INTERLOGS UP Muara Tawar
+            Informasi identitas akun dan pembaruan kata sandi sistem INTERLOGS UP Sembalang
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function UserProfilePage() {
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground">Unit Kerja / Struktur</p>
                   <p className="font-semibold text-foreground">
-                    {user?.structure?.name || "PT PLN Nusantara Power UP Muara Tawar"}
+                    {user?.structure?.name || "PT PLN Nusantara Power UP Sembalang"}
                   </p>
                 </div>
               </div>
@@ -192,7 +192,7 @@ export default function UserProfilePage() {
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground">Lokasi Kerja</p>
-                  <p className="font-semibold text-foreground">{user?.address || "UP Muara Tawar, Bekasi"}</p>
+                  <p className="font-semibold text-foreground">{user?.address || "UP Sembalang, Lampung"}</p>
                 </div>
               </div>
             </CardContent>

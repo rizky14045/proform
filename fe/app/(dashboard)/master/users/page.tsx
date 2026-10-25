@@ -50,7 +50,7 @@ export default function MasterUsersPage() {
     password: "",
     role_id: "",
     phone: "",
-    address: "UP Muara Tawar, Bekasi",
+    address: "UP Sembalang, Lampung",
     user_type: "USER",
     is_active: true,
   });
@@ -85,7 +85,7 @@ export default function MasterUsersPage() {
       password: "",
       role_id: roles[0]?.id || "",
       phone: "",
-      address: "UP Muara Tawar, Bekasi",
+      address: "UP Sembalang, Lampung",
       user_type: "USER",
       is_active: true,
     });
@@ -153,7 +153,7 @@ export default function MasterUsersPage() {
               <Users className="h-6 w-6 text-primary" /> Kelola Pengguna (Users)
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Daftar akun pegawai dan penetapan hak akses role di lingkungan UP Muara Tawar
+              Daftar akun pegawai dan penetapan hak akses role di lingkungan UP Sembalang
             </p>
           </div>
           <Button onClick={handleOpenCreate} className="gap-2 shrink-0">

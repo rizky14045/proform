@@ -57,7 +57,7 @@ const INITIAL_DEMO_REQUESTS: ProcurementRequest[] = [
     request_number: "0019/UPM/600/UPMT/2026",
     wo_number: "WO-2026-0911",
     prk_number: "PRK-2026-004",
-    title: "Pengadaan Spare Part Filter Udara Gas Turbine Muara Tawar Blok 1",
+    title: "Pengadaan Spare Part Filter Udara Gas Turbine Sembalang Blok 1",
     description: "Penggantian filter udara intake turbin gas GT 1.1 dan 1.2 untuk persiapan pemeliharaan periodik",
     creator_id: "usr-staff_user",
     contract_type: "BARANG",
@@ -276,7 +276,7 @@ const INITIAL_DEMO_REQUESTS: ProcurementRequest[] = [
     wo_number: "WO-2026-0940",
     prk_number: "PRK-2026-011",
     title: "Pengadaan Pelumas Sintetik Turbin Gas (Mobil DTE 832)",
-    description: "Penyediaan oli pelumas cadangan untuk turbin gas Muara Tawar",
+    description: "Penyediaan oli pelumas cadangan untuk turbin gas Sembalang",
     creator_id: "usr-staff_user",
     contract_type: "BARANG",
     priority: "NORMAL",
@@ -693,7 +693,7 @@ export default function ProcurementPage() {
                   <Label className="text-xs">Judul / Perihal Pengadaan *</Label>
                   <Input
                     required
-                    placeholder="Contoh: Pengadaan Spare Part Filter Udara Gas Turbine Muara Tawar"
+                    placeholder="Contoh: Pengadaan Spare Part Filter Udara Gas Turbine Sembalang"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="text-xs font-medium"
