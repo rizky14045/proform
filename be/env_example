@@ -1,0 +1,14 @@
+APP_NAME=interlogs
+APP_ENV=local
+APP_DEBUG=true
+
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=macbookpro
+DB_PASSWORD=
+DB_NAME=proform
+DB_SCHEMA=public
+
+PORT=8080
+
+JWT_SECRET=interlogs_jwt_secret_key_secure_2026

@@ -1,0 +1,40 @@
+# Binaries (hasil build)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Folder hasil build
+/bin/
+/build/
+/dist/
+
+# Output coverage & testing
+*.cover
+*.coverprofile
+*.cov
+*.prof
+*.test
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mac / Linux / Windows junk
+.DS_Store
+Thumbs.db
+
+# Go module cache (jangan di-ignore `go.sum`)
+/vendor/
+/pkg/
+
+# Env & Config lokal
+.env
+.env.*
+*.local
