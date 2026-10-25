@@ -2,6 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn, isLocationMatch } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { usePageTransition } from "@/context/page-transition-context";
+
 const SingleMenuItem = ({
   item,
   collapsed,
@@ -10,9 +12,18 @@ const SingleMenuItem = ({
   collapsed: boolean;
 }) => {
   const { badge, href, title } = item;
+  const { navigate } = usePageTransition();
   const locationName = usePathname();
   return (
-    <Link href={href}>
+    <Link
+      href={href}
+      onClick={(e) => {
+        if (href && href !== locationName) {
+          e.preventDefault();
+          navigate(href);
+        }
+      }}
+    >
       <>
         {collapsed ? (
           <div>

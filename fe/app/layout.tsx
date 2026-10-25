@@ -12,6 +12,7 @@ import { SonnToaster } from "@/components/ui/sonner";
 import ThemeProvider from "@/provider/theme.provider";
 import MountedProvider from "@/provider/mounted.provider";
 import fontInter from "@/config/font";
+import { PageTransitionProvider } from "@/context/page-transition-context";
 
 export const metadata = getSeoMeta({
   title: "INTERLOGS - PT PLN Nusantara Power UP Sembalang",
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MountedProvider>
             <AuthProvider>
               <TanstackProvider>
-                <DirectionProvider lang="id">{children}</DirectionProvider>
+                <DirectionProvider lang="id">
+                  <PageTransitionProvider>{children}</PageTransitionProvider>
+                </DirectionProvider>
               </TanstackProvider>
             </AuthProvider>
           </MountedProvider>

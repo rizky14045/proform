@@ -4,6 +4,8 @@ import { cn, isLocationMatch, translate, getDynamicPath } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { usePageTransition } from "@/context/page-transition-context";
+
 function LockLink({
   href,
   children,
@@ -15,6 +17,9 @@ function LockLink({
   subItem: any;
   trans: any;
 }) {
+  const pathname = usePathname();
+  const { navigate } = usePageTransition();
+
   if (subItem.badge) {
     return (
       <span className="text-sm flex space-x-3 items-center transition-all duration-150 opacity-50  cursor-not-allowed">
@@ -32,7 +37,19 @@ function LockLink({
       </span>
     );
   } else {
-    return <Link href={href}>{children}</Link>;
+    return (
+      <Link
+        href={href}
+        onClick={(e) => {
+          if (href && href !== pathname) {
+            e.preventDefault();
+            navigate(href);
+          }
+        }}
+      >
+        {children}
+      </Link>
+    );
   }
 }
 

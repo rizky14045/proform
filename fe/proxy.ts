@@ -27,25 +27,36 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(strippedPath, request.url));
   }
 
-  // Check authentication via NextAuth token and session cookies
-  const secret =
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    "44701d4cea71dda7a51cf998408533d1";
+  // Fast-path authentication check via session cookies (synchronous, 0ms latency)
+  const hasTokenCookie = request.cookies
+    .getAll()
+    .some(
+      (c) =>
+        c.name.includes("session-token") ||
+        c.name.includes("token") ||
+        c.name === "access_token"
+    );
 
-  let token = null;
-  try {
-    token = await getToken({ req: request, secret });
-  } catch (e) {
-    // Edge runtime fallback
+  let isAuthenticated = hasTokenCookie;
+
+  // If no cookie was found, attempt NextAuth JWT token fallback
+  if (!isAuthenticated) {
+    const secret =
+      process.env.AUTH_SECRET ||
+      process.env.NEXTAUTH_SECRET ||
+      "44701d4cea71dda7a51cf998408533d1";
+    try {
+      const token = await getToken({ req: request, secret });
+      isAuthenticated = Boolean(token);
+    } catch (e) {
+      // Fallback
+    }
   }
 
-  const sessionCookie =
-    request.cookies.get("next-auth.session-token")?.value ||
-    request.cookies.get("__Secure-next-auth.session-token")?.value ||
-    request.cookies.get("access_token")?.value;
-
-  const isAuthenticated = Boolean(token || sessionCookie);
+  // Next.js RSC / prefetch requests: fast return if authenticated
+  if (isAuthenticated && (request.nextUrl.searchParams.has("_rsc") || request.headers.get("rsc") === "1")) {
+    return NextResponse.next();
+  }
 
   // 2. Redirect root "/"
   if (pathname === "/" || pathname === "") {

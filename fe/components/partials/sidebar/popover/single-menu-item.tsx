@@ -5,6 +5,8 @@ import { cn, isLocationMatch, translate, getDynamicPath } from "@/lib/utils";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { usePageTransition } from "@/context/page-transition-context";
+
 const SingleMenuItem = ({
   item,
   collapsed,
@@ -15,11 +17,20 @@ const SingleMenuItem = ({
   trans: any;
 }) => {
   const { badge, href, title } = item;
+  const { navigate } = usePageTransition();
 
   const pathname = usePathname();
   const locationName = getDynamicPath(pathname);
   return (
-    <Link href={href}>
+    <Link
+      href={href}
+      onClick={(e) => {
+        if (href && href !== pathname) {
+          e.preventDefault();
+          navigate(href);
+        }
+      }}
+    >
       <>
         {collapsed ? (
           <div>
