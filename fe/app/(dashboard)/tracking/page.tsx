@@ -484,7 +484,7 @@ export default function TrackingPage() {
       {/* MODAL RIWAYAT PERMOHONAN & TIMELINE AUDIT */}
       {selectedRequest && (
         <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent size="5xl" className="max-w-5xl max-h-[92vh] overflow-y-auto">
             <DialogHeader className="border-b pb-3">
               <div className="flex items-center justify-between gap-2 pr-6">
                 <div>

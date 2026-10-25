@@ -44,6 +44,11 @@ import {
   History,
   ShieldCheck,
   AlertTriangle,
+  FilePlus,
+  Hash,
+  Coins,
+  Layers,
+  Calculator,
 } from "lucide-react";
 import { procurementService, CreateProcurementPayload } from "@/services/procurement.service";
 import { ProcurementRequest, RequestItem, ApprovalHistory } from "@/types";
@@ -323,6 +328,10 @@ export default function ProcurementPage() {
   const [actionNotes, setActionNotes] = useState("");
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
+  // Inline Decision State inside Detail Modal (avoids clunky double modal)
+  const [inlineAction, setInlineAction] = useState<"APPROVE" | "REVISE" | "REJECT" | "SUBMIT" | null>(null);
+  const [inlineNotes, setInlineNotes] = useState("");
+
   // Detect current user role
   let currentRole = ((session?.user as any)?.role || "ADMIN").toUpperCase();
   let currentUserName = session?.user?.name || "Pengguna Aktif";
@@ -486,7 +495,7 @@ export default function ProcurementPage() {
     }
   };
 
-  // Open Approval Action Dialog
+  // Open Standalone Action Dialog (for quick actions from table list)
   const handleOpenAction = (
     type: "APPROVE" | "REVISE" | "REJECT" | "SUBMIT",
     req: ProcurementRequest
@@ -499,18 +508,19 @@ export default function ProcurementPage() {
     setActionNotes("");
   };
 
-  // Execute Approval Action (Submit, Approve, Revise, Reject)
-  const handleExecuteAction = async () => {
-    const { type, targetRequest } = actionDialog;
-    if (!targetRequest) return;
-
-    if ((type === "REVISE" || type === "REJECT") && !actionNotes.trim()) {
+  // Shared Action Execution Logic
+  const handleExecuteActionLogic = async (
+    type: "APPROVE" | "REVISE" | "REJECT" | "SUBMIT",
+    targetRequest: ProcurementRequest,
+    notes: string
+  ) => {
+    if ((type === "REVISE" || type === "REJECT") && !notes.trim()) {
       toast.error(
         type === "REVISE"
-          ? "Catatan perbaikan / revisi wajib diisi"
+          ? "Catatan perbaikan / arahan revisi wajib diisi"
           : "Alasan penolakan berkas wajib diisi"
       );
-      return;
+      return false;
     }
 
     try {
@@ -525,7 +535,7 @@ export default function ProcurementPage() {
         newStatus = "IN_APPROVAL";
         stageName = "PENGAJUAN_USER";
         try {
-          await procurementService.submitForApproval(targetRequest.id, actionNotes);
+          await procurementService.submitForApproval(targetRequest.id, notes);
         } catch (e) {}
       } else if (type === "APPROVE") {
         newStatus = "APPROVED";
@@ -536,19 +546,19 @@ export default function ProcurementPage() {
           ? "APPROVAL_GM"
           : "APPROVAL_SPV";
         try {
-          await procurementService.approve(targetRequest.id, actionNotes);
+          await procurementService.approve(targetRequest.id, notes);
         } catch (e) {}
       } else if (type === "REVISE") {
         newStatus = "REVISED";
         stageName = currentRole.includes("MGR") ? "REVISI_MANAGER" : "REVISI_SPV";
         try {
-          await procurementService.revise(targetRequest.id, actionNotes);
+          await procurementService.revise(targetRequest.id, notes);
         } catch (e) {}
       } else if (type === "REJECT") {
         newStatus = "REJECTED";
         stageName = currentRole.includes("MGR") ? "PENOLAKAN_MANAGER" : "PENOLAKAN_SPV";
         try {
-          await procurementService.reject(targetRequest.id, actionNotes);
+          await procurementService.reject(targetRequest.id, notes);
         } catch (e) {}
       }
 
@@ -560,7 +570,7 @@ export default function ProcurementPage() {
         approver_role: currentRole,
         stage_name: stageName,
         action: type,
-        evaluation_notes: actionNotes || (type === "APPROVE" ? "Disetujui" : "Diajukan"),
+        evaluation_notes: notes || (type === "APPROVE" ? "Disetujui" : "Diajukan"),
         sequence_order: (targetRequest.histories?.length || 0) + 1,
         action_timestamp: new Date().toISOString(),
       };
@@ -594,11 +604,33 @@ export default function ProcurementPage() {
         toast.error(`Usulan ${targetRequest.request_number} telah ditolak (REJECTED)`);
       }
 
-      setActionDialog({ open: false, type: "APPROVE", targetRequest: null });
+      return true;
     } catch (err: any) {
       toast.error(err.message || "Gagal memproses aksi persetujuan");
+      return false;
     } finally {
       setIsSubmittingAction(false);
+    }
+  };
+
+  // Standalone dialog executor
+  const handleExecuteAction = async () => {
+    const { type, targetRequest } = actionDialog;
+    if (!targetRequest) return;
+    const ok = await handleExecuteActionLogic(type, targetRequest, actionNotes);
+    if (ok) {
+      setActionDialog({ open: false, type: "APPROVE", targetRequest: null });
+      setActionNotes("");
+    }
+  };
+
+  // Inline decision executor inside detail modal (avoids double modal)
+  const handleExecuteInlineAction = async () => {
+    if (!selectedRequest || !inlineAction) return;
+    const ok = await handleExecuteActionLogic(inlineAction, selectedRequest, inlineNotes);
+    if (ok) {
+      setInlineAction(null);
+      setInlineNotes("");
     }
   };
 
@@ -648,187 +680,284 @@ export default function ProcurementPage() {
                 Buat Usulan Baru
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Formulir Usulan Permintaan Material / Jasa (UPM I)
-                </DialogTitle>
-                <DialogDescription>
-                  Pengisian berkas usulan kebutuhan operasional pembangkit sesuai User Manual Bab 4.6
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateSubmit} className="space-y-4 pt-2">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <DialogContent size="5xl" className="max-w-5xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 shadow-2xl rounded-2xl">
+              <div className="bg-gradient-to-r from-primary/10 via-background to-primary/5 p-6 border-b border-border/60">
+                <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs">Nomor Usulan / Nota Dinas</Label>
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-10 w-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold shadow-xs">
+                        <FilePlus className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <DialogTitle className="text-xl font-bold text-foreground">
+                          Formulir Usulan Permintaan Material / Jasa (UPM I)
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                          PT PLN Nusantara Power UP Sembalang &bull; Sesuai Pedoman Tata Kelola Pengadaan
+                        </DialogDescription>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge color="secondary" className="px-3 py-1 text-xs font-semibold">
+                    Draft Usulan Baru
+                  </Badge>
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateSubmit} className="p-6 space-y-6">
+                {/* SECTION 1: IDENTITAS DOKUMEN & PENGADAAN */}
+                <div className="rounded-xl border border-border/70 bg-card/60 p-5 space-y-4 shadow-2xs">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border/50 text-xs font-bold text-foreground uppercase tracking-wider">
+                    <FileText className="w-4 h-4 text-primary" />
+                    1. Identitas Dokumen & Klasifikasi Pengadaan
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold flex items-center gap-1.5">
+                        <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                        Nomor Usulan / Nota Dinas
+                      </Label>
+                      <Input
+                        placeholder="Otomatis jika dikosongkan..."
+                        value={formData.request_number}
+                        onChange={(e) => setFormData({ ...formData, request_number: e.target.value })}
+                        className="text-xs font-mono h-9 bg-background/80"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Format: 00X/UPM/600/UPMT/2026</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                        No. Work Order (WO Ellipse)
+                      </Label>
+                      <Input
+                        placeholder="Contoh: WO-2026-0812"
+                        value={formData.wo_number}
+                        onChange={(e) => setFormData({ ...formData, wo_number: e.target.value })}
+                        className="text-xs font-mono h-9 bg-background/80"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Nomor WO pemeliharaan di sistem ERP Ellipse</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold flex items-center gap-1.5">
+                        <Coins className="w-3.5 h-3.5 text-muted-foreground" />
+                        No. PRK Anggaran
+                      </Label>
+                      <Input
+                        placeholder="Contoh: PRK-2026-004"
+                        value={formData.prk_number}
+                        onChange={(e) => setFormData({ ...formData, prk_number: e.target.value })}
+                        className="text-xs font-mono h-9 bg-background/80"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Pos alokasi anggaran investasi/operasi</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold flex items-center gap-1.5">
+                      Judul / Perihal Pengadaan <span className="text-destructive">*</span>
+                    </Label>
                     <Input
-                      placeholder="Otomatis jika dikosongkan..."
-                      value={formData.request_number}
-                      onChange={(e) => setFormData({ ...formData, request_number: e.target.value })}
-                      className="text-xs font-mono"
+                      required
+                      placeholder="Contoh: Pengadaan Spare Part Filter Udara Gas Turbine UP Sembalang Blok 1"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="text-xs font-medium h-9.5 bg-background/80"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">No. Work Order (WO Ellipse)</Label>
-                    <Input
-                      placeholder="Contoh: WO-2026-0812"
-                      value={formData.wo_number}
-                      onChange={(e) => setFormData({ ...formData, wo_number: e.target.value })}
-                      className="text-xs"
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Jenis Pengadaan</Label>
+                      <select
+                        className="w-full h-9.5 rounded-md border border-input bg-background/80 px-3 py-1.5 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary"
+                        value={formData.contract_type}
+                        onChange={(e: any) => setFormData({ ...formData, contract_type: e.target.value })}
+                      >
+                        <option value="BARANG">Barang (Material & Spare Part Pembangkit)</option>
+                        <option value="JASA">Jasa Pemborongan / Jasa Lainnya</option>
+                        <option value="KONSULTANSI">Jasa Konsultansi / Enjiniring</option>
+                        <option value="SEWA">Sewa Peralatan / Fasilitas</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Tingkat Prioritas</Label>
+                      <select
+                        className="w-full h-9.5 rounded-md border border-input bg-background/80 px-3 py-1.5 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary"
+                        value={formData.priority}
+                        onChange={(e: any) => setFormData({ ...formData, priority: e.target.value })}
+                      >
+                        <option value="NORMAL">Normal (Rutin Terjadwal)</option>
+                        <option value="URGENT">Urgent (Operasional Mendesak)</option>
+                        <option value="EMERGENCY">Emergency (Darurat Pembangkit)</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">No. PRK Anggaran</Label>
-                    <Input
-                      placeholder="Contoh: PRK-2026-004"
-                      value={formData.prk_number}
-                      onChange={(e) => setFormData({ ...formData, prk_number: e.target.value })}
-                      className="text-xs"
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Latar Belakang / Keterangan Kebutuhan Operasional</Label>
+                    <Textarea
+                      rows={2}
+                      placeholder="Jelaskan justifikasi dan urgensi kebutuhan barang/jasa ini untuk unit pembangkit..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="text-xs bg-background/80 resize-none"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs">Judul / Perihal Pengadaan *</Label>
-                  <Input
-                    required
-                    placeholder="Contoh: Pengadaan Spare Part Filter Udara Gas Turbine Sembalang"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="text-xs font-medium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Jenis Pengadaan</Label>
-                    <select
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs"
-                      value={formData.contract_type}
-                      onChange={(e: any) => setFormData({ ...formData, contract_type: e.target.value })}
-                    >
-                      <option value="BARANG">Barang (Material & Spare Part)</option>
-                      <option value="JASA">Jasa Pemborongan / Jasa Lainnya</option>
-                      <option value="KONSULTANSI">Jasa Konsultansi</option>
-                      <option value="SEWA">Sewa Peralatan</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Tingkat Prioritas</Label>
-                    <select
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs"
-                      value={formData.priority}
-                      onChange={(e: any) => setFormData({ ...formData, priority: e.target.value })}
-                    >
-                      <option value="NORMAL">Normal</option>
-                      <option value="URGENT">Urgent (Operasional Mendesak)</option>
-                      <option value="EMERGENCY">Emergency (Darurat Pembangkit)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Items Line Table */}
-                <div className="space-y-2 pt-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold">Rincian Barang / Jasa Yang Diminta</Label>
+                {/* SECTION 2: RINCIAN ITEM BARANG / JASA */}
+                <div className="rounded-xl border border-border/70 bg-card/60 p-5 space-y-4 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                    <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider">
+                      <Layers className="w-4 h-4 text-primary" />
+                      2. Rincian Material & Jasa yang Diminta ({formData.items?.length || 0} Baris)
+                    </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       onClick={handleAddItem}
-                      className="h-7 text-xs gap-1"
+                      className="h-8 text-xs gap-1.5 bg-background hover:bg-primary/5 hover:text-primary border-primary/30"
                     >
-                      <Plus className="w-3 h-3" /> Tambah Baris
+                      <Plus className="w-3.5 h-3.5 text-primary" /> Tambah Baris Material
                     </Button>
                   </div>
 
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {formData.items?.map((item, idx) => (
-                      <div key={idx} className="p-2.5 rounded-lg border border-border/60 bg-muted/20 space-y-2">
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                          <div className="md:col-span-5">
-                            <Input
-                              placeholder="Nama Item / Jasa *"
-                              required
-                              value={item.item_name}
-                              onChange={(e) => handleItemChange(idx, "item_name", e.target.value)}
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Input
-                              type="number"
-                              placeholder="Qty"
-                              required
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleItemChange(idx, "quantity", parseFloat(e.target.value) || 0)
-                              }
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Input
-                              placeholder="Satuan (PCS/EA)"
-                              required
-                              value={item.unit}
-                              onChange={(e) => handleItemChange(idx, "unit", e.target.value)}
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Input
-                              type="number"
-                              placeholder="Est. Harga"
-                              value={item.estimated_price}
-                              onChange={(e) =>
-                                handleItemChange(idx, "estimated_price", parseFloat(e.target.value) || 0)
-                              }
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div className="md:col-span-1 flex items-center justify-end">
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                    {formData.items?.map((item, idx) => {
+                      const subtotal = (Number(item.quantity) || 0) * (Number(item.estimated_price) || 0);
+                      return (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-xl border border-border/70 bg-background/60 hover:border-primary/40 transition-all space-y-2.5 shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-bold text-[11px]">
+                              Item #{idx + 1}
+                            </span>
                             {formData.items!.length > 1 && (
                               <Button
                                 type="button"
-                                size="icon"
+                                size="sm"
                                 variant="ghost"
                                 onClick={() => handleRemoveItem(idx)}
-                                className="h-8 w-8 text-destructive"
+                                className="h-7 px-2 text-destructive hover:bg-destructive/10 text-xs gap-1"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" /> Hapus
                               </Button>
                             )}
                           </div>
-                        </div>
-                        <Input
-                          placeholder="Spesifikasi teknis / referensi katalog..."
-                          value={item.specification}
-                          onChange={(e) => handleItemChange(idx, "specification", e.target.value)}
-                          className="text-xs h-7 text-muted-foreground"
-                        />
-                      </div>
-                    ))}
-                  </div>
 
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10 mt-2">
-                    <span className="text-xs font-semibold">Total Nilai Rencana Anggaran Biaya (RAB):</span>
-                    <span className="text-sm font-bold text-primary">
-                      {formatCurrency(formData.rab_amount)}
-                    </span>
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                            <div className="md:col-span-5 space-y-1">
+                              <Label className="text-[11px] font-medium text-muted-foreground">Nama Barang / Uraian Jasa *</Label>
+                              <Input
+                                placeholder="Contoh: Pre-Filter Udara Gas Turbine"
+                                required
+                                value={item.item_name}
+                                onChange={(e) => handleItemChange(idx, "item_name", e.target.value)}
+                                className="text-xs h-8.5 font-medium"
+                              />
+                            </div>
+                            <div className="md:col-span-2 space-y-1">
+                              <Label className="text-[11px] font-medium text-muted-foreground">Volume / Qty *</Label>
+                              <Input
+                                type="number"
+                                placeholder="Qty"
+                                required
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  handleItemChange(idx, "quantity", parseFloat(e.target.value) || 0)
+                                }
+                                className="text-xs h-8.5 font-mono text-center"
+                              />
+                            </div>
+                            <div className="md:col-span-2 space-y-1">
+                              <Label className="text-[11px] font-medium text-muted-foreground">Satuan *</Label>
+                              <Input
+                                placeholder="PCS / SET / EA"
+                                required
+                                value={item.unit}
+                                onChange={(e) => handleItemChange(idx, "unit", e.target.value)}
+                                className="text-xs h-8.5 uppercase text-center font-mono"
+                              />
+                            </div>
+                            <div className="md:col-span-3 space-y-1">
+                              <Label className="text-[11px] font-medium text-muted-foreground">Est. Harga Satuan (Rp)</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={item.estimated_price}
+                                onChange={(e) =>
+                                  handleItemChange(idx, "estimated_price", parseFloat(e.target.value) || 0)
+                                }
+                                className="text-xs h-8.5 font-mono text-right"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center pt-1">
+                            <div className="md:col-span-8">
+                              <Input
+                                placeholder="Spesifikasi teknis, part number, atau referensi katalog pabrikan..."
+                                value={item.specification}
+                                onChange={(e) => handleItemChange(idx, "specification", e.target.value)}
+                                className="text-xs h-8 text-muted-foreground bg-muted/20"
+                              />
+                            </div>
+                            <div className="md:col-span-4 flex items-center justify-end gap-2 text-xs">
+                              <span className="text-muted-foreground text-[11px]">Subtotal:</span>
+                              <span className="font-bold text-foreground font-mono text-xs">
+                                {formatCurrency(subtotal)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <DialogFooter className="pt-3">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
+                {/* SECTION 3: RINGKASAN RAB */}
+                <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-background p-4.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold">
+                      <Calculator className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground uppercase tracking-wide">
+                        Total Rencana Anggaran Biaya (RAB)
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Akumulasi total estimasi biaya dari seluruh baris kebutuhan yang diajukan
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xl md:text-2xl font-black text-primary font-mono tracking-tight">
+                    {formatCurrency(formData.rab_amount)}
+                  </div>
+                </div>
+
+                {/* FOOTER ACTIONS */}
+                <div className="flex items-center justify-between pt-3 border-t border-border/70">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateOpen(false)}
+                    className="gap-1.5 text-xs font-semibold"
+                  >
                     Batal
                   </Button>
-                  <Button type="submit" size="sm" className="gap-2">
-                    <Send className="w-4 h-4" /> Simpan Draft Usulan
+                  <Button type="submit" className="gap-2 text-xs font-semibold shadow-md">
+                    <Send className="w-4 h-4" /> Simpan Draft Usulan Pengadaan
                   </Button>
-                </DialogFooter>
+                </div>
               </form>
             </DialogContent>
           </Dialog>
@@ -1000,104 +1129,183 @@ export default function ProcurementPage() {
         </CardContent>
       </Card>
 
-      {/* DETAILS & AUDIT TRACKER DIALOG */}
+      {/* DETAILS & AUDIT TRACKER DIALOG (EXPANDED XL WITH INLINE ACTION DECISION) */}
       {selectedRequest && (
-        <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="border-b pb-3">
-              <div className="flex items-center justify-between gap-2 pr-6">
-                <div>
-                  <DialogTitle className="text-base font-bold flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Berkas Usulan: {selectedRequest.request_number}
-                  </DialogTitle>
-                  <DialogDescription className="text-xs mt-0.5">
-                    WO: {selectedRequest.wo_number || "-"} | PRK: {selectedRequest.prk_number || "-"} | Tipe:{" "}
-                    {selectedRequest.contract_type}
-                  </DialogDescription>
+        <Dialog
+          open={!!selectedRequest}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedRequest(null);
+              setInlineAction(null);
+              setInlineNotes("");
+            }
+          }}
+        >
+          <DialogContent size="5xl" className="max-w-5xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 shadow-2xl rounded-2xl">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-primary/10 via-background to-primary/5 p-6 border-b border-border/60">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-10 w-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold shadow-xs">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                        Berkas Usulan: {selectedRequest.request_number}
+                      </DialogTitle>
+                      <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                        WO: {selectedRequest.wo_number || "-"} &bull; PRK: {selectedRequest.prk_number || "-"} &bull; Tipe: {selectedRequest.contract_type}
+                      </DialogDescription>
+                    </div>
+                  </div>
                 </div>
-                <div>
+
+                <div className="flex items-center gap-2">
                   {String(selectedRequest.current_status) === "APPROVED" && (
-                    <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs">
-                      APPROVED
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs px-3 py-1 font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> APPROVED
                     </Badge>
                   )}
                   {String(selectedRequest.current_status) === "IN_APPROVAL" && (
-                    <Badge className="bg-blue-500/10 text-blue-600 border border-blue-500/20 text-xs animate-pulse">
-                      IN APPROVAL
+                    <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 text-xs px-3 py-1 font-bold animate-pulse">
+                      <Clock className="w-3.5 h-3.5 mr-1" /> IN APPROVAL
                     </Badge>
                   )}
                   {String(selectedRequest.current_status) === "REVISED" && (
-                    <Badge className="bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs">
-                      REVISED
+                    <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs px-3 py-1 font-bold">
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" /> REVISED
                     </Badge>
                   )}
                   {String(selectedRequest.current_status) === "REJECTED" && (
-                    <Badge className="bg-rose-500/10 text-rose-600 border border-rose-500/20 text-xs">
-                      REJECTED
+                    <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs px-3 py-1 font-bold">
+                      <XCircle className="w-3.5 h-3.5 mr-1" /> REJECTED
                     </Badge>
                   )}
                   {String(selectedRequest.current_status) === "DRAFT" && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs px-3 py-1 font-semibold">
                       DRAFT
                     </Badge>
                   )}
                 </div>
               </div>
-            </DialogHeader>
+            </div>
 
-            <div className="space-y-4 py-2 text-xs">
-              {/* Header Box */}
-              <div className="p-3 rounded-lg bg-muted/40 border space-y-2">
-                <div className="font-bold text-foreground text-sm">{selectedRequest.title}</div>
-                <div className="text-muted-foreground leading-relaxed">{selectedRequest.description}</div>
-                <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                  <span className="text-muted-foreground font-medium">Nilai Rencana Anggaran (RAB):</span>
-                  <span className="text-primary font-bold text-sm">
+            <div className="p-6 space-y-6 text-xs">
+              {/* Ringkasan Parameter Berkas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-xl border border-border/70 bg-card/60 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
+                    Total Nilai RAB
+                  </span>
+                  <span className="text-base font-extrabold text-primary font-mono block">
                     {formatCurrency(selectedRequest.rab_amount)}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-border/70 bg-card/60 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
+                    Klasifikasi Kontrak
+                  </span>
+                  <span className="text-xs font-semibold text-foreground block">
+                    {selectedRequest.contract_type}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-border/70 bg-card/60 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
+                    Tingkat Prioritas
+                  </span>
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${
+                      selectedRequest.priority === "EMERGENCY"
+                        ? "bg-rose-500"
+                        : selectedRequest.priority === "URGENT"
+                        ? "bg-amber-500"
+                        : "bg-emerald-500"
+                    }`} />
+                    {selectedRequest.priority}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-border/70 bg-card/60 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
+                    Tahapan Alur Saat Ini
+                  </span>
+                  <span className="text-xs font-semibold text-foreground font-mono block">
+                    {selectedRequest.current_step || "USULAN_PERMINTAAN_I"}
                   </span>
                 </div>
               </div>
 
-              {/* Items List */}
+              {/* Judul & Deskripsi Kebutuhan */}
+              <div className="p-4 rounded-xl border border-border/70 bg-card/60 space-y-2 shadow-2xs">
+                <div className="font-bold text-foreground text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" />
+                  {selectedRequest.title}
+                </div>
+                {selectedRequest.description && (
+                  <p className="text-muted-foreground leading-relaxed pl-6">
+                    {selectedRequest.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Items List Table */}
               {selectedRequest.items && selectedRequest.items.length > 0 && (
-                <div className="space-y-2">
-                  <div className="font-bold text-xs text-foreground">Rincian Item Kebutuhan:</div>
-                  <div className="border border-border rounded-lg overflow-hidden">
+                <div className="space-y-3">
+                  <div className="font-bold text-xs text-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" />
+                    Daftar Kebutuhan Material & Jasa ({selectedRequest.items.length} Item)
+                  </div>
+                  <div className="border border-border/70 rounded-xl overflow-hidden shadow-2xs bg-card">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-muted text-muted-foreground text-[10px] uppercase font-semibold">
+                      <thead className="bg-muted/70 text-muted-foreground text-[10px] uppercase font-bold border-b border-border/60">
                         <tr>
-                          <th className="p-2">Nama Barang / Jasa</th>
-                          <th className="p-2">Spesifikasi Teknik</th>
-                          <th className="p-2 text-center">Volume</th>
-                          <th className="p-2 text-right">Est. Harga</th>
-                          <th className="p-2 text-right">Subtotal</th>
+                          <th className="p-3 w-10 text-center">No</th>
+                          <th className="p-3">Nama Barang / Jasa</th>
+                          <th className="p-3">Spesifikasi Teknik & Part No.</th>
+                          <th className="p-3 text-center">Volume</th>
+                          <th className="p-3 text-right">Est. Harga Satuan</th>
+                          <th className="p-3 text-right">Subtotal</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody className="divide-y divide-border/60">
                         {selectedRequest.items.map((it, i) => (
-                          <tr key={i}>
-                            <td className="p-2 font-medium text-foreground">{it.item_name}</td>
-                            <td className="p-2 text-muted-foreground">{it.specification || "-"}</td>
-                            <td className="p-2 text-center font-mono">
-                              {it.quantity} {it.unit}
+                          <tr key={i} className="hover:bg-muted/20 transition-colors">
+                            <td className="p-3 text-center font-mono text-muted-foreground">{i + 1}</td>
+                            <td className="p-3 font-semibold text-foreground">{it.item_name}</td>
+                            <td className="p-3 text-muted-foreground">{it.specification || "-"}</td>
+                            <td className="p-3 text-center font-mono">
+                              <span className="px-2 py-0.5 rounded bg-muted font-bold">
+                                {it.quantity} {it.unit}
+                              </span>
                             </td>
-                            <td className="p-2 text-right font-mono">{formatCurrency(it.estimated_price)}</td>
-                            <td className="p-2 text-right font-bold text-foreground font-mono">
+                            <td className="p-3 text-right font-mono text-muted-foreground">
+                              {formatCurrency(it.estimated_price)}
+                            </td>
+                            <td className="p-3 text-right font-bold text-foreground font-mono">
                               {formatCurrency(it.quantity * it.estimated_price)}
                             </td>
                           </tr>
                         ))}
                       </tbody>
+                      <tfoot className="bg-muted/40 font-bold border-t border-border/70">
+                        <tr>
+                          <td colSpan={5} className="p-3 text-right text-muted-foreground">
+                            Total Estimasi Anggaran (RAB):
+                          </td>
+                          <td className="p-3 text-right font-mono text-primary text-sm">
+                            {formatCurrency(selectedRequest.rab_amount)}
+                          </td>
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 </div>
               )}
 
               {/* SECTION: WORKFLOW AUDIT TRACKER (Sesuai MD Bab 6) */}
-              <div className="space-y-3 pt-2 border-t border-border">
+              <div className="space-y-3 pt-3 border-t border-border/60">
                 <div className="flex items-center justify-between">
-                  <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                  <div className="font-bold text-xs text-foreground flex items-center gap-2 uppercase tracking-wider">
                     <History className="h-4 w-4 text-primary" />
                     Jejak Audit & Riwayat Persetujuan (*Approval Workflow*)
                   </div>
@@ -1107,7 +1315,7 @@ export default function ProcurementPage() {
                 </div>
 
                 {(!selectedRequest.histories || selectedRequest.histories.length === 0) ? (
-                  <div className="p-4 rounded-lg bg-muted/20 text-center text-muted-foreground border border-dashed">
+                  <div className="p-5 rounded-xl bg-muted/20 text-center text-muted-foreground border border-dashed border-border/70">
                     Berkas ini masih berstatus Draft dan belum pernah diajukan ke meja persetujuan.
                   </div>
                 ) : (
@@ -1115,13 +1323,13 @@ export default function ProcurementPage() {
                     <ul className="-mb-6">
                       {selectedRequest.histories.map((item, idx) => {
                         const isLast = idx === selectedRequest.histories!.length - 1;
-                        let badgeBg = "bg-blue-100 text-blue-800 border-blue-300";
+                        let badgeBg = "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300";
                         if (item.action === "APPROVE") {
-                          badgeBg = "bg-emerald-100 text-emerald-800 border-emerald-300";
+                          badgeBg = "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300";
                         } else if (item.action === "REVISE") {
-                          badgeBg = "bg-amber-100 text-amber-800 border-amber-300";
+                          badgeBg = "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300";
                         } else if (item.action === "REJECT") {
-                          badgeBg = "bg-rose-100 text-rose-800 border-rose-300";
+                          badgeBg = "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300";
                         }
 
                         return (
@@ -1129,13 +1337,13 @@ export default function ProcurementPage() {
                             <div className="relative pb-6">
                               {!isLast && (
                                 <span
-                                  className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-border"
+                                  className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-border/80"
                                   aria-hidden="true"
                                 />
                               )}
                               <div className="relative flex space-x-3 items-start">
                                 <div>
-                                  <span className="h-8 w-8 rounded-full bg-card border flex items-center justify-center ring-4 ring-background text-xs font-bold text-muted-foreground shadow-xs">
+                                  <span className="h-8 w-8 rounded-full bg-card border border-border flex items-center justify-center ring-4 ring-background text-xs font-bold text-muted-foreground shadow-xs">
                                     {idx + 1}
                                   </span>
                                 </div>
@@ -1177,22 +1385,160 @@ export default function ProcurementPage() {
                   </div>
                 )}
               </div>
+
+              {/* INLINE ACTION DECISION CARD (ELIMINATES DOUBLE MODAL!) */}
+              {inlineAction && (
+                <div
+                  className={`p-5 rounded-xl border transition-all animate-in fade-in zoom-in-95 duration-200 shadow-sm ${
+                    inlineAction === "APPROVE"
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                      : inlineAction === "REVISE"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200"
+                      : inlineAction === "REJECT"
+                      ? "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-200"
+                      : "bg-blue-500/10 border-blue-500/30 text-blue-950 dark:text-blue-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-current/15 mb-3">
+                    <div className="flex items-center gap-2 font-bold text-sm">
+                      {inlineAction === "APPROVE" && <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
+                      {inlineAction === "REVISE" && <RotateCcw className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
+                      {inlineAction === "REJECT" && <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />}
+                      {inlineAction === "SUBMIT" && <Send className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+                      <span>
+                        {inlineAction === "APPROVE" && "Form Persetujuan Usulan (Approval Decision)"}
+                        {inlineAction === "REVISE" && "Form Pengembalian untuk Revisi (Revision Request)"}
+                        {inlineAction === "REJECT" && "Form Penolakan Berkas Usulan (Rejection Decision)"}
+                        {inlineAction === "SUBMIT" && "Konfirmasi Pengajuan Berkas Usulan (Submit)"}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-background/60 font-semibold border border-current/20">
+                      Pejabat: {currentRole}
+                    </span>
+                  </div>
+
+                  <p className="text-xs mb-3 text-muted-foreground leading-relaxed">
+                    {inlineAction === "APPROVE" && (
+                      <>Sebagai <strong>{currentRole}</strong>, Anda akan menyatakan berkas ini valid dan disetujui. Berkas akan dialirkan ke tahapan selanjutnya (Inventori / Penyusunan HPE).</>
+                    )}
+                    {inlineAction === "REVISE" && (
+                      <>Berkas akan dikembalikan ke status <strong>REVISED</strong>. Inisiator usulan akan menerima catatan revisi untuk segera diperbaiki dan diajukan ulang.</>
+                    )}
+                    {inlineAction === "REJECT" && (
+                      <>Tindakan penolakan bersifat <strong>FINAL</strong>. Berkas akan diarsipkan dengan status <strong>REJECTED</strong> dan tidak dapat diproses lebih lanjut.</>
+                    )}
+                    {inlineAction === "SUBMIT" && (
+                      <>Berkas akan diajukan ke meja Supervisor / Penanggung Jawab untuk diverifikasi dalam alur persetujuan berjenjang.</>
+                    )}
+                  </p>
+
+                  <div className="space-y-1.5 mb-4">
+                    <Label className="text-xs font-semibold flex items-center justify-between">
+                      <span>
+                        {inlineAction === "APPROVE" || inlineAction === "SUBMIT"
+                          ? "Catatan / Instruksi Tambahan (Opsional):"
+                          : inlineAction === "REVISE"
+                          ? "Catatan Perbaikan / Arahan Revisi *"
+                          : "Alasan Penolakan Berkas *"}
+                      </span>
+                      {(inlineAction === "REVISE" || inlineAction === "REJECT") && (
+                        <span className="text-[10px] text-destructive font-bold uppercase tracking-wider">Wajib Diisi</span>
+                      )}
+                    </Label>
+                    <Textarea
+                      rows={3}
+                      value={inlineNotes}
+                      onChange={(e) => setInlineNotes(e.target.value)}
+                      placeholder={
+                        inlineAction === "APPROVE"
+                          ? "Contoh: Disetujui sesuai spesifikasi dan anggaran PRK 2026."
+                          : inlineAction === "REVISE"
+                          ? "Contoh: Mohon lengkapi perbandingan harga dan lampirkan manual part turbin..."
+                          : inlineAction === "REJECT"
+                          ? "Contoh: Anggaran belum tersedia atau spesifikasi tidak memenuhi standar keandalan."
+                          : "Tambahkan catatan penyerahan berkas..."
+                      }
+                      className="text-xs bg-background/90 text-foreground"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-current/15">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setInlineAction(null); setInlineNotes(""); }}
+                      className="text-xs"
+                    >
+                      Batalkan
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isSubmittingAction}
+                      onClick={handleExecuteInlineAction}
+                      className={`text-xs gap-1.5 font-semibold text-white shadow-md ${
+                        inlineAction === "APPROVE"
+                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          : inlineAction === "REVISE"
+                          ? "bg-amber-600 hover:bg-amber-700"
+                          : inlineAction === "REJECT"
+                          ? "bg-rose-600 hover:bg-rose-700"
+                          : "bg-blue-600 hover:bg-blue-700"
+                      }`}
+                    >
+                      {isSubmittingAction ? (
+                        "Memproses..."
+                      ) : inlineAction === "APPROVE" ? (
+                        <>
+                          <Check className="w-4 h-4" /> Ya, Setujui Berkas Sekarang
+                        </>
+                      ) : inlineAction === "REVISE" ? (
+                        <>
+                          <RotateCcw className="w-4 h-4" /> Kirimkan Permintaan Revisi
+                        </>
+                      ) : inlineAction === "REJECT" ? (
+                        <>
+                          <XCircle className="w-4 h-4" /> Konfirmasi Tolak Berkas
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" /> Kirim untuk Persetujuan
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ACTION PANEL FOOTER */}
-            <DialogFooter className="border-t pt-3 flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedRequest(null)}>
+            <div className="bg-muted/30 p-4 border-t border-border/70 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedRequest(null);
+                  setInlineAction(null);
+                  setInlineNotes("");
+                }}
+                className="text-xs font-semibold"
+              >
                 Tutup
               </Button>
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 {/* 1. Jika DRAFT / REVISED: Tombol Send For Approval */}
                 {(String(selectedRequest.current_status) === "DRAFT" ||
                   String(selectedRequest.current_status) === "REVISED") && (
                   <Button
                     size="sm"
-                    onClick={() => handleOpenAction("SUBMIT", selectedRequest)}
-                    className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                    onClick={() => {
+                      setInlineAction("SUBMIT");
+                      setInlineNotes("");
+                    }}
+                    className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs"
                   >
                     <Send className="w-3.5 h-3.5" /> Kirim untuk Persetujuan
                   </Button>
@@ -1204,105 +1550,126 @@ export default function ProcurementPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleOpenAction("REVISE", selectedRequest)}
-                      className="gap-1 text-amber-600 border-amber-300 hover:bg-amber-50"
+                      onClick={() => {
+                        setInlineAction("REVISE");
+                        setInlineNotes("");
+                      }}
+                      className="gap-1.5 text-xs text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-300 dark:border-amber-700 font-semibold"
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Minta Revisi
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleOpenAction("REJECT", selectedRequest)}
-                      className="gap-1 text-rose-600 border-rose-300 hover:bg-rose-50"
+                      onClick={() => {
+                        setInlineAction("REJECT");
+                        setInlineNotes("");
+                      }}
+                      className="gap-1.5 text-xs text-rose-700 border-rose-300 hover:bg-rose-50 dark:text-rose-300 dark:border-rose-700 font-semibold"
                     >
                       <XCircle className="w-3.5 h-3.5" /> Tolak Usulan
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => handleOpenAction("APPROVE", selectedRequest)}
-                      className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      onClick={() => {
+                        setInlineAction("APPROVE");
+                        setInlineNotes("");
+                      }}
+                      className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
                     >
                       <Check className="w-3.5 h-3.5" /> Setujui (Approve)
                     </Button>
                   </>
                 )}
               </div>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* CONFIRMATION / ACTION MODAL (APPROVE, REVISE, REJECT, SUBMIT) */}
+      {/* STANDALONE ACTION MODAL (FOR DIRECT ACTIONS FROM TABLE LIST) */}
       <Dialog
         open={actionDialog.open}
         onOpenChange={(open) => !open && setActionDialog({ ...actionDialog, open: false })}
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              {actionDialog.type === "APPROVE" && (
-                <>
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                  Konfirmasi Persetujuan Usulan
-                </>
-              )}
-              {actionDialog.type === "REVISE" && (
-                <>
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  Kembalikan Berkas untuk Revisi
-                </>
-              )}
-              {actionDialog.type === "REJECT" && (
-                <>
-                  <XCircle className="h-5 w-5 text-rose-600" />
-                  Penolakan Berkas Usulan
-                </>
-              )}
-              {actionDialog.type === "SUBMIT" && (
-                <>
-                  <Send className="h-5 w-5 text-blue-600" />
-                  Kirim Usulan untuk Persetujuan
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Nomor Berkas: <strong>{actionDialog.targetRequest?.request_number}</strong>
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent size="xl" className="max-w-xl p-0 border border-border/80 shadow-2xl rounded-2xl overflow-hidden">
+          <div className={`p-5 border-b border-border/60 ${
+            actionDialog.type === "APPROVE"
+              ? "bg-emerald-500/10 text-emerald-950 dark:text-emerald-200"
+              : actionDialog.type === "REVISE"
+              ? "bg-amber-500/10 text-amber-950 dark:text-amber-200"
+              : actionDialog.type === "REJECT"
+              ? "bg-rose-500/10 text-rose-950 dark:text-rose-200"
+              : "bg-blue-500/10 text-blue-950 dark:text-blue-200"
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-background/80 flex items-center justify-center font-bold shadow-xs">
+                {actionDialog.type === "APPROVE" && <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+                {actionDialog.type === "REVISE" && <RotateCcw className="h-5 w-5 text-amber-600" />}
+                {actionDialog.type === "REJECT" && <XCircle className="h-5 w-5 text-rose-600" />}
+                {actionDialog.type === "SUBMIT" && <Send className="h-5 w-5 text-blue-600" />}
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  {actionDialog.type === "APPROVE" && "Konfirmasi Persetujuan Usulan"}
+                  {actionDialog.type === "REVISE" && "Kembalikan Berkas untuk Revisi"}
+                  {actionDialog.type === "REJECT" && "Penolakan Berkas Usulan"}
+                  {actionDialog.type === "SUBMIT" && "Kirim Usulan untuk Persetujuan"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Nomor Berkas: <strong>{actionDialog.targetRequest?.request_number}</strong>
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
 
-          <div className="space-y-3 py-2 text-xs">
+          <div className="p-6 space-y-4 text-xs">
+            {/* Quick Summary Pill */}
+            <div className="p-3 rounded-xl border border-border/70 bg-card/60 space-y-1">
+              <div className="font-semibold text-foreground text-xs">{actionDialog.targetRequest?.title}</div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between pt-1">
+                <span>Rencana Anggaran (RAB):</span>
+                <span className="font-bold text-primary font-mono">{formatCurrency(actionDialog.targetRequest?.rab_amount || 0)}</span>
+              </div>
+            </div>
+
             {actionDialog.type === "APPROVE" && (
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground leading-relaxed">
                 Apakah Anda yakin menyetujui usulan ini sebagai <strong>{currentRole}</strong>?
                 Setelah disetujui, berkas akan diteruskan ke tahapan selanjutnya (Inventori / HPE).
               </p>
             )}
 
             {actionDialog.type === "REVISE" && (
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground leading-relaxed">
                 Masukkan catatan perbaikan atau klarifikasi yang perlu diperbaiki oleh inisiator:
               </p>
             )}
 
             {actionDialog.type === "REJECT" && (
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground leading-relaxed">
                 Berikan penjelasan atau dasar penolakan usulan ini. Berkas yang ditolak tidak dapat diproses lebih lanjut:
               </p>
             )}
 
             {actionDialog.type === "SUBMIT" && (
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground leading-relaxed">
                 Berkas akan dikirimkan ke meja Supervisor untuk diverifikasi dan disetujui.
               </p>
             )}
 
-            <div>
-              <Label className="text-xs font-semibold">
-                {actionDialog.type === "APPROVE" || actionDialog.type === "SUBMIT"
-                  ? "Catatan Tambahan (Opsional)"
-                  : actionDialog.type === "REVISE"
-                  ? "Catatan Perbaikan / Saran Revisi *"
-                  : "Alasan Penolakan Berkas *"}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold flex items-center justify-between">
+                <span>
+                  {actionDialog.type === "APPROVE" || actionDialog.type === "SUBMIT"
+                    ? "Catatan Tambahan (Opsional)"
+                    : actionDialog.type === "REVISE"
+                    ? "Catatan Perbaikan / Saran Revisi *"
+                    : "Alasan Penolakan Berkas *"}
+                </span>
+                {(actionDialog.type === "REVISE" || actionDialog.type === "REJECT") && (
+                  <span className="text-[10px] text-destructive font-bold uppercase">Wajib Diisi</span>
+                )}
               </Label>
               <Textarea
                 rows={3}
@@ -1316,17 +1683,18 @@ export default function ProcurementPage() {
                     ? "Tuliskan alasan penolakan berkas..."
                     : "Catatan peninjauan..."
                 }
-                className="text-xs mt-1"
+                className="text-xs"
               />
             </div>
           </div>
 
-          <DialogFooter className="pt-2">
+          <div className="bg-muted/30 p-4 border-t border-border/70 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setActionDialog({ ...actionDialog, open: false })}
+              className="text-xs font-semibold"
             >
               Batalkan
             </Button>
@@ -1335,15 +1703,15 @@ export default function ProcurementPage() {
               size="sm"
               disabled={isSubmittingAction}
               onClick={handleExecuteAction}
-              className={
+              className={`text-xs gap-1.5 font-semibold text-white shadow-md ${
                 actionDialog.type === "APPROVE"
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
                   : actionDialog.type === "REVISE"
-                  ? "bg-amber-600 hover:bg-amber-700 text-white"
+                  ? "bg-amber-600 hover:bg-amber-700"
                   : actionDialog.type === "REJECT"
-                  ? "bg-rose-600 hover:bg-rose-700 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }
+                  ? "bg-rose-600 hover:bg-rose-700"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
               {isSubmittingAction
                 ? "Memproses..."
@@ -1355,7 +1723,7 @@ export default function ProcurementPage() {
                 ? "Tolak Berkas Ini"
                 : "Kirim Sekarang"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

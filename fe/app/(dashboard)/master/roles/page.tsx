@@ -197,7 +197,7 @@ export default function MasterRolesPage() {
 
         {/* DIALOG FORM ROLES */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent size="xl" className="max-w-xl">
             <DialogHeader>
               <DialogTitle>
                 {dialogMode === "CREATE" ? "Tambah Jabatan (Role)" : "Ubah Jabatan (Role)"}

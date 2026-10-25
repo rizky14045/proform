@@ -234,7 +234,7 @@ export default function MasterUsersPage() {
 
         {/* DIALOG FORM USER */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent size="2xl" className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {dialogMode === "CREATE" ? "Tambah Pengguna Baru" : "Ubah Data Pengguna"}
