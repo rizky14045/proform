@@ -10,7 +10,7 @@ import (
 
 type WarehouseRepository interface {
 	// Goods Receipt
-	FindAllReceipts(search string, status string) ([]GoodsReceipt, error)
+	FindAllReceipts(search string, status string, page int, limit int) ([]GoodsReceipt, int64, error)
 	GetReceiptByID(id uuid.UUID) (*GoodsReceipt, error)
 	CreateReceipt(receipt *GoodsReceipt) error
 	UpdateReceipt(receipt *GoodsReceipt) error
@@ -18,7 +18,7 @@ type WarehouseRepository interface {
 	GenerateReceiptNumber() (string, error)
 
 	// Inspection Act (BAPHB / BAST)
-	FindAllActs(actType string, status string) ([]InspectionAcceptanceAct, error)
+	FindAllActs(actType string, status string, page int, limit int) ([]InspectionAcceptanceAct, int64, error)
 	GetActByID(id uuid.UUID) (*InspectionAcceptanceAct, error)
 	CreateAct(act *InspectionAcceptanceAct) error
 	UpdateAct(act *InspectionAcceptanceAct) error
@@ -34,9 +34,10 @@ func NewWarehouseRepository(db *gorm.DB) WarehouseRepository {
 	return &warehouseRepository{db: db}
 }
 
-func (r *warehouseRepository) FindAllReceipts(search string, status string) ([]GoodsReceipt, error) {
+func (r *warehouseRepository) FindAllReceipts(search string, status string, page int, limit int) ([]GoodsReceipt, int64, error) {
 	var list []GoodsReceipt
-	query := r.db.Preload("PO.Supplier").Preload("InspectedBy").Order("created_at desc")
+	var total int64
+	query := r.db.Model(&GoodsReceipt{})
 
 	if search != "" {
 		query = query.Where("receipt_number ILIKE ? OR delivery_note_number ILIKE ?", "%"+search+"%", "%"+search+"%")
@@ -45,10 +46,19 @@ func (r *warehouseRepository) FindAllReceipts(search string, status string) ([]G
 		query = query.Where("status = ?", status)
 	}
 
-	if err := query.Find(&list).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return list, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Preload("PO.Supplier").Preload("InspectedBy").Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 func (r *warehouseRepository) GetReceiptByID(id uuid.UUID) (*GoodsReceipt, error) {
@@ -81,10 +91,10 @@ func (r *warehouseRepository) GenerateReceiptNumber() (string, error) {
 	return fmt.Sprintf("%04d/PPR/600/UPMT/%d", count+1, year), nil
 }
 
-func (r *warehouseRepository) FindAllActs(actType string, status string) ([]InspectionAcceptanceAct, error) {
+func (r *warehouseRepository) FindAllActs(actType string, status string, page int, limit int) ([]InspectionAcceptanceAct, int64, error) {
 	var list []InspectionAcceptanceAct
-	query := r.db.Preload("PO.Supplier").Preload("LeadInspector").Preload("Secretary").Preload("Member1").Preload("Member2").Preload("Member3").
-		Order("created_at desc")
+	var total int64
+	query := r.db.Model(&InspectionAcceptanceAct{})
 
 	if actType != "" && actType != "ALL" {
 		query = query.Where("act_type = ?", actType)
@@ -93,10 +103,20 @@ func (r *warehouseRepository) FindAllActs(actType string, status string) ([]Insp
 		query = query.Where("status = ?", status)
 	}
 
-	if err := query.Find(&list).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return list, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Preload("PO.Supplier").Preload("LeadInspector").Preload("Secretary").Preload("Member1").Preload("Member2").Preload("Member3").
+		Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 func (r *warehouseRepository) GetActByID(id uuid.UUID) (*InspectionAcceptanceAct, error) {

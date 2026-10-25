@@ -25,14 +25,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Truck, Search, Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
 import { masterService } from "@/services/modules.service";
-import { Supplier } from "@/types";
+import { Supplier, PaginationMeta } from "@/types";
 import { RoleGuard } from "@/components/auth/role-guard";
+import { DataTablePagination } from "@/components/data-table-pagination";
 import toast from "react-hot-toast";
 
 export default function MasterSuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState<PaginationMeta>();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"CREATE" | "EDIT">("CREATE");
@@ -53,13 +57,18 @@ export default function MasterSuppliersPage() {
 
   useEffect(() => {
     loadData();
-  }, [search]);
+  }, [search, page, limit]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await masterService.getSuppliers(search);
-      if (res?.data) setSuppliers(res.data);
+      const res = await masterService.getSuppliers({ search, page, limit });
+      if (res?.data) {
+        setSuppliers(res.data);
+        if (res.pagination) {
+          setPagination(res.pagination);
+        }
+      }
     } catch (err: any) {
       console.error(err);
     } finally {
@@ -152,7 +161,10 @@ export default function MasterSuppliersPage() {
                 <Input
                   placeholder="Cari nama / kode rekanan..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                   className="pl-9 text-xs"
                 />
               </div>
@@ -208,6 +220,17 @@ export default function MasterSuppliersPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="p-4">
+              <DataTablePagination
+                pagination={pagination}
+                onPageChange={setPage}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                isLoading={loading}
+              />
             </div>
           </CardContent>
         </Card>

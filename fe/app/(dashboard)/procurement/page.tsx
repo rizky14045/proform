@@ -51,7 +51,8 @@ import {
   Calculator,
 } from "lucide-react";
 import { procurementService, CreateProcurementPayload } from "@/services/procurement.service";
-import { ProcurementRequest, RequestItem, ApprovalHistory } from "@/types";
+import { ProcurementRequest, RequestItem, ApprovalHistory, PaginationMeta } from "@/types";
+import { DataTablePagination } from "@/components/data-table-pagination";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
@@ -312,6 +313,14 @@ export default function ProcurementPage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    limit: 10,
+    total_items: INITIAL_DEMO_REQUESTS.length,
+    total_pages: 1,
+  });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ProcurementRequest | null>(null);
 
@@ -382,14 +391,22 @@ export default function ProcurementPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [search, statusFilter, page, limit]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await procurementService.getAll(search).catch(() => null);
+      const res = await procurementService.getAll({
+        search,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+        page,
+        limit,
+      }).catch(() => null);
       if (res?.data && res.data.length > 0) {
         setRequests(res.data);
+        if (res.pagination) {
+          setPagination(res.pagination);
+        }
       }
     } catch (err) {
       console.warn("Using memory/local procurement list");
@@ -974,14 +991,20 @@ export default function ProcurementPage() {
                 <Input
                   placeholder="Cari no. usulan, WO, judul..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                   className="pl-9 h-9 text-xs"
                 />
               </div>
 
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
                 className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs"
               >
                 <option value="ALL">Semua Status Berkas</option>
@@ -1125,6 +1148,17 @@ export default function ProcurementPage() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="p-4">
+            <DataTablePagination
+              pagination={pagination}
+              onPageChange={setPage}
+              onLimitChange={(l) => {
+                setLimit(l);
+                setPage(1);
+              }}
+              isLoading={loading}
+            />
           </div>
         </CardContent>
       </Card>

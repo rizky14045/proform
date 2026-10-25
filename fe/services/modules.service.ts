@@ -22,9 +22,21 @@ import {
   General,
 } from "@/types";
 
+export interface PaginationQueryParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  status?: string;
+  [key: string]: any;
+}
+
+const resolveParams = (params?: PaginationQueryParams | string) => {
+  return typeof params === "string" ? { search: params } : params;
+};
+
 // HPE & RKS Service
 export const hpeService = {
-  getAllHPE: (search?: string) => apiClient.get<any, ApiResponse<EngineeringEstimate[]>>("/engineering-estimates/", { params: { search } }),
+  getAllHPE: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<EngineeringEstimate[]>>("/engineering-estimates/", { params: resolveParams(params) }),
   getHPEById: (id: string) => apiClient.get<any, ApiResponse<EngineeringEstimate>>(`/engineering-estimates/${id}`),
   createHPE: (payload: any) => apiClient.post<any, ApiResponse<EngineeringEstimate>>("/engineering-estimates/", payload),
   deleteHPE: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/engineering-estimates/${id}`),
@@ -35,7 +47,7 @@ export const hpeService = {
 
 // Owner Estimate & Tender Service
 export const oeService = {
-  getAllOE: (search?: string) => apiClient.get<any, ApiResponse<OwnerEstimate[]>>("/owner-estimates/", { params: { search } }),
+  getAllOE: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<OwnerEstimate[]>>("/owner-estimates/", { params: resolveParams(params) }),
   getOEById: (id: string) => apiClient.get<any, ApiResponse<OwnerEstimate>>(`/owner-estimates/${id}`),
   createOE: (payload: any) => apiClient.post<any, ApiResponse<OwnerEstimate>>("/owner-estimates/", payload),
   deleteOE: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/owner-estimates/${id}`),
@@ -45,22 +57,22 @@ export const oeService = {
 
 // Purchase Order Service
 export const poService = {
-  getAllPO: (search?: string) => apiClient.get<any, ApiResponse<PurchaseOrder[]>>("/purchase-orders/", { params: { search } }),
+  getAllPO: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<PurchaseOrder[]>>("/purchase-orders/", { params: resolveParams(params) }),
   getPOById: (id: string) => apiClient.get<any, ApiResponse<PurchaseOrder>>(`/purchase-orders/${id}`),
   createPO: (payload: any) => apiClient.post<any, ApiResponse<PurchaseOrder>>("/purchase-orders/", payload),
   deletePO: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/purchase-orders/${id}`),
-  getAllBankGuarantees: (search?: string) => apiClient.get<any, ApiResponse<BankGuarantee[]>>("/purchase-orders/bank-guarantees", { params: { search } }),
+  getAllBankGuarantees: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<BankGuarantee[]>>("/purchase-orders/bank-guarantees", { params: resolveParams(params) }),
   createBankGuarantee: (payload: any) => apiClient.post<any, ApiResponse<BankGuarantee>>("/purchase-orders/bank-guarantees", payload),
   verifyBankGuarantee: (id: string, confirmationStatus: string) => apiClient.patch<any, ApiResponse<BankGuarantee>>(`/purchase-orders/bank-guarantees/${id}/verify`, { confirmation_status: confirmationStatus }),
 };
 
 // Warehouse & BAST Service
 export const warehouseService = {
-  getAllReceipts: (search?: string) => apiClient.get<any, ApiResponse<GoodsReceipt[]>>("/warehouse/goods-receipts", { params: { search } }),
+  getAllReceipts: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<GoodsReceipt[]>>("/warehouse/goods-receipts", { params: resolveParams(params) }),
   getReceiptById: (id: string) => apiClient.get<any, ApiResponse<GoodsReceipt>>(`/warehouse/goods-receipts/${id}`),
   createReceipt: (payload: any) => apiClient.post<any, ApiResponse<GoodsReceipt>>("/warehouse/goods-receipts", payload),
   deleteReceipt: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/warehouse/goods-receipts/${id}`),
-  getAllActs: (search?: string) => apiClient.get<any, ApiResponse<InspectionAcceptanceAct[]>>("/warehouse/inspection-acts", { params: { search } }),
+  getAllActs: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<InspectionAcceptanceAct[]>>("/warehouse/inspection-acts", { params: resolveParams(params) }),
   getActById: (id: string) => apiClient.get<any, ApiResponse<InspectionAcceptanceAct>>(`/warehouse/inspection-acts/${id}`),
   createAct: (payload: any) => apiClient.post<any, ApiResponse<InspectionAcceptanceAct>>("/warehouse/inspection-acts", payload),
   deleteAct: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/warehouse/inspection-acts/${id}`),
@@ -95,32 +107,32 @@ export const delegationService = {
 // Master Data Service
 export const masterService = {
   // Users
-  getUsers: (search?: string) => apiClient.get<any, ApiResponse<User[]>>("/users/", { params: { search } }),
+  getUsers: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<User[]>>("/users/", { params: resolveParams(params) }),
   getUserById: (id: string) => apiClient.get<any, ApiResponse<User>>(`/users/${id}`),
   createUser: (payload: any) => apiClient.post<any, ApiResponse<User>>("/users/", payload),
   updateUser: (id: string, payload: any) => apiClient.put<any, ApiResponse<User>>(`/users/${id}`, payload),
   deleteUser: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/users/${id}`),
 
   // Roles
-  getRoles: (search?: string) => apiClient.get<any, ApiResponse<Role[]>>("/roles/", { params: { search } }),
+  getRoles: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<Role[]>>("/roles/", { params: resolveParams(params) }),
   createRole: (payload: any) => apiClient.post<any, ApiResponse<Role>>("/roles/", payload),
   updateRole: (id: string, payload: any) => apiClient.put<any, ApiResponse<Role>>(`/roles/${id}`, payload),
   deleteRole: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/roles/${id}`),
 
   // Structures
-  getStructures: (search?: string) => apiClient.get<any, ApiResponse<Structure[]>>("/structures/", { params: { search } }),
+  getStructures: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<Structure[]>>("/structures/", { params: resolveParams(params) }),
   createStructure: (payload: any) => apiClient.post<any, ApiResponse<Structure>>("/structures/", payload),
   updateStructure: (id: string, payload: any) => apiClient.put<any, ApiResponse<Structure>>(`/structures/${id}`, payload),
   deleteStructure: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/structures/${id}`),
 
   // Suppliers
-  getSuppliers: (search?: string) => apiClient.get<any, ApiResponse<Supplier[]>>("/suppliers/", { params: { search } }),
+  getSuppliers: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<Supplier[]>>("/suppliers/", { params: resolveParams(params) }),
   createSupplier: (payload: any) => apiClient.post<any, ApiResponse<Supplier>>("/suppliers/", payload),
   updateSupplier: (id: string, payload: any) => apiClient.put<any, ApiResponse<Supplier>>(`/suppliers/${id}`, payload),
   deleteSupplier: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/suppliers/${id}`),
 
   // Stock Codes
-  getStockCodes: (search?: string) => apiClient.get<any, ApiResponse<StockCode[]>>("/stock-codes/", { params: { search } }),
+  getStockCodes: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<StockCode[]>>("/stock-codes/", { params: resolveParams(params) }),
   createStockCode: (payload: any) => apiClient.post<any, ApiResponse<StockCode>>("/stock-codes/", payload),
   updateStockCode: (id: string, payload: any) => apiClient.put<any, ApiResponse<StockCode>>(`/stock-codes/${id}`, payload),
   deleteStockCode: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/stock-codes/${id}`),

@@ -20,13 +20,15 @@ func NewRoleHandler(service RoleService) *RoleHandler {
 func (h *RoleHandler) Index(c *gin.Context) {
 	search := c.Query("search")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	roles, err := h.service.FindAll(search, status)
+	roles, total, err := h.service.FindAll(search, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve roles", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Roles retrieved successfully", roles, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Roles retrieved successfully", roles, pagination, nil, http.StatusOK)
 }
 
 func (h *RoleHandler) Show(c *gin.Context) {

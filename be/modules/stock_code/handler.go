@@ -20,13 +20,15 @@ func NewStockCodeHandler(service StockCodeService) *StockCodeHandler {
 func (h *StockCodeHandler) Index(c *gin.Context) {
 	search := c.Query("search")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	list, err := h.service.FindAll(search, status)
+	list, total, err := h.service.FindAll(search, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve stock codes", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Stock codes retrieved successfully", list, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Stock codes retrieved successfully", list, pagination, nil, http.StatusOK)
 }
 
 func (h *StockCodeHandler) Show(c *gin.Context) {

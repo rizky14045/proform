@@ -7,7 +7,7 @@ import (
 )
 
 type PurchaseOrderService interface {
-	FindAllPO(search string, status string) ([]PurchaseOrder, error)
+	FindAllPO(search string, status string, page int, limit int) ([]PurchaseOrder, int64, error)
 	GetPOByID(id uuid.UUID) (*PurchaseOrder, error)
 	GetPOByRequestID(requestID uuid.UUID) (*PurchaseOrder, error)
 	CreatePO(creatorID *uuid.UUID, req PurchaseOrderRequest) (*PurchaseOrder, error)
@@ -33,8 +33,8 @@ func NewPurchaseOrderService(repo PurchaseOrderRepository, procReqRepo procureme
 	}
 }
 
-func (s *purchaseOrderService) FindAllPO(search string, status string) ([]PurchaseOrder, error) {
-	return s.repo.FindAllPO(search, status)
+func (s *purchaseOrderService) FindAllPO(search string, status string, page int, limit int) ([]PurchaseOrder, int64, error) {
+	return s.repo.FindAllPO(search, status, page, limit)
 }
 
 func (s *purchaseOrderService) GetPOByID(id uuid.UUID) (*PurchaseOrder, error) {

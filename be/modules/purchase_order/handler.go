@@ -20,13 +20,15 @@ func NewPurchaseOrderHandler(service PurchaseOrderService) *PurchaseOrderHandler
 func (h *PurchaseOrderHandler) IndexPO(c *gin.Context) {
 	search := c.Query("search")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	list, err := h.service.FindAllPO(search, status)
+	list, total, err := h.service.FindAllPO(search, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve PO list", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "PO list retrieved successfully", list, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "PO list retrieved successfully", list, pagination, nil, http.StatusOK)
 }
 
 func (h *PurchaseOrderHandler) ShowPO(c *gin.Context) {

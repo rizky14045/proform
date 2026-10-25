@@ -6,7 +6,7 @@ import (
 )
 
 type UserRepository interface {
-	FindAll(search string, status string) ([]User, error)
+	FindAll(search string, status string, page int, limit int) ([]User, int64, error)
 	GetByID(id uuid.UUID) (*User, error)
 	GetByNID(nid string) (*User, error)
 	GetByEmail(email string) (*User, error)
@@ -23,9 +23,11 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) FindAll(search string, status string) ([]User, error) {
+func (r *userRepository) FindAll(search string, status string, page int, limit int) ([]User, int64, error) {
 	var users []User
-	query := r.db.Preload("Role").Preload("Structure").Order("created_at desc")
+	var total int64
+
+	query := r.db.Model(&User{})
 
 	if search != "" {
 		query = query.Where("name ILIKE ? OR nid ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -36,10 +38,19 @@ func (r *userRepository) FindAll(search string, status string) ([]User, error) {
 		query = query.Where("is_active = ?", false)
 	}
 
-	if err := query.Find(&users).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return users, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Preload("Role").Preload("Structure").Order("created_at desc").Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
 }
 
 func (r *userRepository) GetByID(id uuid.UUID) (*User, error) {

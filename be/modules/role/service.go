@@ -7,7 +7,7 @@ import (
 )
 
 type RoleService interface {
-	FindAll(search string, status string) ([]Role, error)
+	FindAll(search string, status string, page int, limit int) ([]Role, int64, error)
 	GetByID(id uuid.UUID) (*Role, error)
 	Create(creatorID *uuid.UUID, req RoleRequest) (*Role, error)
 	Update(id uuid.UUID, updaterID *uuid.UUID, req RoleRequest) (*Role, error)
@@ -22,8 +22,8 @@ func NewRoleService(repo RoleRepository) RoleService {
 	return &roleService{repo: repo}
 }
 
-func (s *roleService) FindAll(search string, status string) ([]Role, error) {
-	return s.repo.FindAll(search, status)
+func (s *roleService) FindAll(search string, status string, page int, limit int) ([]Role, int64, error) {
+	return s.repo.FindAll(search, status, page, limit)
 }
 
 func (s *roleService) GetByID(id uuid.UUID) (*Role, error) {

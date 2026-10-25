@@ -10,7 +10,7 @@ import (
 
 type PurchaseOrderRepository interface {
 	// PO
-	FindAllPO(search string, status string) ([]PurchaseOrder, error)
+	FindAllPO(search string, status string, page int, limit int) ([]PurchaseOrder, int64, error)
 	GetPOByID(id uuid.UUID) (*PurchaseOrder, error)
 	GetPOByNumber(poNumber string) (*PurchaseOrder, error)
 	GetPOByRequestID(requestID uuid.UUID) (*PurchaseOrder, error)
@@ -35,10 +35,10 @@ func NewPurchaseOrderRepository(db *gorm.DB) PurchaseOrderRepository {
 	return &purchaseOrderRepository{db: db}
 }
 
-func (r *purchaseOrderRepository) FindAllPO(search string, status string) ([]PurchaseOrder, error) {
+func (r *purchaseOrderRepository) FindAllPO(search string, status string, page int, limit int) ([]PurchaseOrder, int64, error) {
 	var list []PurchaseOrder
-	query := r.db.Preload("Request").Preload("Supplier").Preload("PICResolution").Preload("Creator").
-		Order("created_at desc")
+	var total int64
+	query := r.db.Model(&PurchaseOrder{})
 
 	if search != "" {
 		query = query.Where("po_number ILIKE ? OR notes ILIKE ?", "%"+search+"%", "%"+search+"%")
@@ -47,10 +47,20 @@ func (r *purchaseOrderRepository) FindAllPO(search string, status string) ([]Pur
 		query = query.Where("status = ?", status)
 	}
 
-	if err := query.Find(&list).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return list, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Preload("Request").Preload("Supplier").Preload("PICResolution").Preload("Creator").
+		Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 func (r *purchaseOrderRepository) GetPOByID(id uuid.UUID) (*PurchaseOrder, error) {

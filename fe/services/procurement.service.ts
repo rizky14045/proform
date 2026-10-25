@@ -32,9 +32,20 @@ export interface ApprovalActionPayload {
   evaluation_notes?: string;
 }
 
+export interface ProcurementQueryParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  step?: string;
+  status?: string;
+  creator_id?: string;
+  assigned_to_id?: string;
+}
+
 export const procurementService = {
-  getAll: async (search?: string): Promise<ApiResponse<ProcurementRequest[]>> => {
-    return apiClient.get("/procurement-requests/", { params: { search } });
+  getAll: async (params?: ProcurementQueryParams | string): Promise<ApiResponse<ProcurementRequest[]>> => {
+    const queryParams = typeof params === "string" ? { search: params } : params;
+    return apiClient.get("/procurement-requests/", { params: queryParams });
   },
 
   getById: async (id: string): Promise<ApiResponse<ProcurementRequest>> => {

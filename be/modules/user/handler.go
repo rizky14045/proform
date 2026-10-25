@@ -20,13 +20,15 @@ func NewUserHandler(service UserService) *UserHandler {
 func (h *UserHandler) Index(c *gin.Context) {
 	search := c.Query("search")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	users, err := h.service.FindAll(search, status)
+	users, total, err := h.service.FindAll(search, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve users", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Users retrieved successfully", users, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Users retrieved successfully", users, pagination, nil, http.StatusOK)
 }
 
 func (h *UserHandler) Show(c *gin.Context) {

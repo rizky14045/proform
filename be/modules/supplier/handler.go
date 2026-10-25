@@ -20,13 +20,15 @@ func NewSupplierHandler(service SupplierService) *SupplierHandler {
 func (h *SupplierHandler) Index(c *gin.Context) {
 	search := c.Query("search")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	suppliers, err := h.service.FindAll(search, status)
+	suppliers, total, err := h.service.FindAll(search, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve suppliers", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Suppliers retrieved successfully", suppliers, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Suppliers retrieved successfully", suppliers, pagination, nil, http.StatusOK)
 }
 
 func (h *SupplierHandler) Show(c *gin.Context) {

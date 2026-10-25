@@ -36,12 +36,14 @@ func (h *ProcurementRequestHandler) Index(c *gin.Context) {
 		}
 	}
 
-	list, err := h.service.FindAll(step, status, search, creatorID, assignedToID)
+	page, limit, _ := helper.GetPaginationParams(c)
+	list, total, err := h.service.FindAll(step, status, search, creatorID, assignedToID, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve procurement requests", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Procurement requests retrieved successfully", list, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Procurement requests retrieved successfully", list, pagination, nil, http.StatusOK)
 }
 
 func (h *ProcurementRequestHandler) Show(c *gin.Context) {

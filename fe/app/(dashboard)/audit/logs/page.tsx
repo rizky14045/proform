@@ -27,7 +27,8 @@ import {
   Filter,
 } from "lucide-react";
 import { RoleGuard } from "@/components/auth/role-guard";
-import { AuditLog } from "@/types";
+import { AuditLog, PaginationMeta } from "@/types";
+import { DataTablePagination } from "@/components/data-table-pagination";
 import toast from "react-hot-toast";
 
 const DEMO_AUDIT_LOGS: AuditLog[] = [
@@ -179,6 +180,8 @@ export default function AuditLogsPage() {
   const [tableFilter, setTableFilter] = useState("ALL");
   const [actionFilter, setActionFilter] = useState("ALL");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const filteredLogs = logs.filter((log) => {
     const s = search.toLowerCase();
@@ -193,6 +196,16 @@ export default function AuditLogsPage() {
     if (actionFilter !== "ALL" && log.action !== actionFilter) return false;
     return true;
   });
+
+  const totalItems = filteredLogs.length;
+  const totalPages = Math.ceil(totalItems / limit) || 1;
+  const paginatedLogs = filteredLogs.slice((page - 1) * limit, page * limit);
+  const pagination: PaginationMeta = {
+    page,
+    limit,
+    total_items: totalItems,
+    total_pages: totalPages,
+  };
 
   return (
     <RoleGuard allowedRoles={["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "MGR_KEUANGAN", "MGR_USER"]}>
@@ -277,7 +290,7 @@ export default function AuditLogsPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredLogs.map((log) => (
+                    paginatedLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                         <td className="py-3 px-4 font-mono text-[11px] whitespace-nowrap">
                           {log.created_at ? new Date(log.created_at).toLocaleString("id-ID") : "-"}
@@ -328,6 +341,16 @@ export default function AuditLogsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="p-4">
+              <DataTablePagination
+                pagination={pagination}
+                onPageChange={setPage}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+              />
             </div>
           </CardContent>
         </Card>

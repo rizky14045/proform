@@ -7,24 +7,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Truck, Search, Plus, Clock, CheckCircle2 } from "lucide-react";
 import { warehouseService } from "@/services/modules.service";
-import { GoodsReceipt } from "@/types";
+import { GoodsReceipt, PaginationMeta } from "@/types";
 import { RoleGuard } from "@/components/auth/role-guard";
+import { DataTablePagination } from "@/components/data-table-pagination";
 import toast from "react-hot-toast";
 
 export default function WarehouseReceiptsPage() {
   const [receipts, setReceipts] = useState<GoodsReceipt[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadData();
-  }, [search]);
+  }, [search, page, limit]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await warehouseService.getAllReceipts(search).catch(() => ({ data: [] }));
-      if (res?.data) setReceipts(res.data);
+      const res = await warehouseService.getAllReceipts({ search, page, limit }).catch(() => null);
+      if (res?.data) {
+        setReceipts(res.data);
+        if (res.pagination) {
+          setPagination(res.pagination);
+        }
+      }
     } catch (err: any) {
       console.error(err);
       toast.error("Gagal memuat data penerimaan barang");
@@ -58,7 +67,10 @@ export default function WarehouseReceiptsPage() {
                 <Input
                   placeholder="Cari nomor penerimaan / PO..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                   className="pl-9 h-9 text-xs"
                 />
               </div>
@@ -109,6 +121,17 @@ export default function WarehouseReceiptsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="p-4">
+              <DataTablePagination
+                pagination={pagination}
+                onPageChange={setPage}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                isLoading={loading}
+              />
             </div>
           </CardContent>
         </Card>

@@ -20,13 +20,15 @@ func NewWarehouseHandler(service WarehouseService) *WarehouseHandler {
 func (h *WarehouseHandler) IndexReceipts(c *gin.Context) {
 	search := c.Query("search")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	list, err := h.service.FindAllReceipts(search, status)
+	list, total, err := h.service.FindAllReceipts(search, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve goods receipts", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Goods receipts retrieved successfully", list, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Goods receipts retrieved successfully", list, pagination, nil, http.StatusOK)
 }
 
 func (h *WarehouseHandler) ShowReceipt(c *gin.Context) {
@@ -119,13 +121,15 @@ func (h *WarehouseHandler) DestroyReceipt(c *gin.Context) {
 func (h *WarehouseHandler) IndexActs(c *gin.Context) {
 	actType := c.Query("act_type")
 	status := c.Query("status")
+	page, limit, _ := helper.GetPaginationParams(c)
 
-	list, err := h.service.FindAllActs(actType, status)
+	list, total, err := h.service.FindAllActs(actType, status, page, limit)
 	if err != nil {
 		helper.JsonResponse(c, false, "Failed to retrieve inspection acts", nil, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	helper.JsonResponse(c, true, "Inspection acts retrieved successfully", list, nil, http.StatusOK)
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Inspection acts retrieved successfully", list, pagination, nil, http.StatusOK)
 }
 
 func (h *WarehouseHandler) ShowAct(c *gin.Context) {

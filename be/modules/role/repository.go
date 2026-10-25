@@ -6,7 +6,7 @@ import (
 )
 
 type RoleRepository interface {
-	FindAll(search string, status string) ([]Role, error)
+	FindAll(search string, status string, page int, limit int) ([]Role, int64, error)
 	GetByID(id uuid.UUID) (*Role, error)
 	GetByCode(code string) (*Role, error)
 	Create(role *Role) error
@@ -22,9 +22,11 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 	return &roleRepository{db: db}
 }
 
-func (r *roleRepository) FindAll(search string, status string) ([]Role, error) {
+func (r *roleRepository) FindAll(search string, status string, page int, limit int) ([]Role, int64, error) {
 	var roles []Role
-	query := r.db.Order("name asc")
+	var total int64
+
+	query := r.db.Model(&Role{})
 
 	if search != "" {
 		query = query.Where("name ILIKE ? OR code ILIKE ? OR description ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -33,10 +35,19 @@ func (r *roleRepository) FindAll(search string, status string) ([]Role, error) {
 		query = query.Where("status = ?", status)
 	}
 
-	if err := query.Find(&roles).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return roles, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Order("name asc").Find(&roles).Error; err != nil {
+		return nil, 0, err
+	}
+	return roles, total, nil
 }
 
 func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {

@@ -6,7 +6,7 @@ import (
 )
 
 type StockCodeRepository interface {
-	FindAll(search string, status string) ([]StockCode, error)
+	FindAll(search string, status string, page int, limit int) ([]StockCode, int64, error)
 	GetByID(id uuid.UUID) (*StockCode, error)
 	GetByCode(code string) (*StockCode, error)
 	Create(stockCode *StockCode) error
@@ -22,9 +22,11 @@ func NewStockCodeRepository(db *gorm.DB) StockCodeRepository {
 	return &stockCodeRepository{db: db}
 }
 
-func (r *stockCodeRepository) FindAll(search string, status string) ([]StockCode, error) {
+func (r *stockCodeRepository) FindAll(search string, status string, page int, limit int) ([]StockCode, int64, error) {
 	var list []StockCode
-	query := r.db.Order("code asc")
+	var total int64
+
+	query := r.db.Model(&StockCode{})
 
 	if search != "" {
 		query = query.Where("name ILIKE ? OR code ILIKE ? OR description ILIKE ? OR part_number ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -35,10 +37,19 @@ func (r *stockCodeRepository) FindAll(search string, status string) ([]StockCode
 		query = query.Where("is_active = ?", false)
 	}
 
-	if err := query.Find(&list).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return list, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Order("code asc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 func (r *stockCodeRepository) GetByID(id uuid.UUID) (*StockCode, error) {

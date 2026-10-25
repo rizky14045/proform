@@ -8,7 +8,7 @@ import (
 )
 
 type UserService interface {
-	FindAll(search string, status string) ([]User, error)
+	FindAll(search string, status string, page int, limit int) ([]User, int64, error)
 	GetByID(id uuid.UUID) (*User, error)
 	GetByNID(nid string) (*User, error)
 	GetByEmail(email string) (*User, error)
@@ -25,8 +25,8 @@ func NewUserService(repo UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) FindAll(search string, status string) ([]User, error) {
-	return s.repo.FindAll(search, status)
+func (s *userService) FindAll(search string, status string, page int, limit int) ([]User, int64, error) {
+	return s.repo.FindAll(search, status, page, limit)
 }
 
 func (s *userService) GetByID(id uuid.UUID) (*User, error) {

@@ -10,10 +10,18 @@ export interface AuditFields {
   deleted_at?: string;
 }
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total_items: number;
+  total_pages: number;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data: T;
+  pagination?: PaginationMeta;
   error?: string;
 }
 

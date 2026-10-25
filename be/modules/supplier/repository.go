@@ -6,7 +6,7 @@ import (
 )
 
 type SupplierRepository interface {
-	FindAll(search string, status string) ([]Supplier, error)
+	FindAll(search string, status string, page int, limit int) ([]Supplier, int64, error)
 	GetByID(id uuid.UUID) (*Supplier, error)
 	GetByCode(code string) (*Supplier, error)
 	Create(supplier *Supplier) error
@@ -22,9 +22,11 @@ func NewSupplierRepository(db *gorm.DB) SupplierRepository {
 	return &supplierRepository{db: db}
 }
 
-func (r *supplierRepository) FindAll(search string, status string) ([]Supplier, error) {
+func (r *supplierRepository) FindAll(search string, status string, page int, limit int) ([]Supplier, int64, error) {
 	var suppliers []Supplier
-	query := r.db.Order("name asc")
+	var total int64
+
+	query := r.db.Model(&Supplier{})
 
 	if search != "" {
 		query = query.Where("name ILIKE ? OR code ILIKE ? OR pic_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -33,10 +35,19 @@ func (r *supplierRepository) FindAll(search string, status string) ([]Supplier, 
 		query = query.Where("status = ?", status)
 	}
 
-	if err := query.Find(&suppliers).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return suppliers, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Order("name asc").Find(&suppliers).Error; err != nil {
+		return nil, 0, err
+	}
+	return suppliers, total, nil
 }
 
 func (r *supplierRepository) GetByID(id uuid.UUID) (*Supplier, error) {

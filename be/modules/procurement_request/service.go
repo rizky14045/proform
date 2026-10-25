@@ -8,7 +8,7 @@ import (
 )
 
 type ProcurementRequestService interface {
-	FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID) ([]ProcurementRequest, error)
+	FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID, page int, limit int) ([]ProcurementRequest, int64, error)
 	GetByID(id uuid.UUID) (*ProcurementRequest, error)
 	Create(creatorID uuid.UUID, req ProcurementRequestCreate) (*ProcurementRequest, error)
 	Update(id uuid.UUID, updaterID *uuid.UUID, req ProcurementRequestUpdate) (*ProcurementRequest, error)
@@ -32,8 +32,8 @@ func NewProcurementRequestService(repo ProcurementRequestRepository, approvalRep
 	}
 }
 
-func (s *procurementRequestService) FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID) ([]ProcurementRequest, error) {
-	return s.repo.FindAll(step, status, search, creatorID, assignedToID)
+func (s *procurementRequestService) FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID, page int, limit int) ([]ProcurementRequest, int64, error) {
+	return s.repo.FindAll(step, status, search, creatorID, assignedToID, page, limit)
 }
 
 func (s *procurementRequestService) GetByID(id uuid.UUID) (*ProcurementRequest, error) {

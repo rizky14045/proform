@@ -9,7 +9,7 @@ import (
 )
 
 type ProcurementRequestRepository interface {
-	FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID) ([]ProcurementRequest, error)
+	FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID, page int, limit int) ([]ProcurementRequest, int64, error)
 	GetByID(id uuid.UUID) (*ProcurementRequest, error)
 	GetByRequestNumber(reqNum string) (*ProcurementRequest, error)
 	Create(req *ProcurementRequest) error
@@ -27,10 +27,11 @@ func NewProcurementRequestRepository(db *gorm.DB) ProcurementRequestRepository {
 	return &procurementRequestRepository{db: db}
 }
 
-func (r *procurementRequestRepository) FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID) ([]ProcurementRequest, error) {
+func (r *procurementRequestRepository) FindAll(step string, status string, search string, creatorID *uuid.UUID, assignedToID *uuid.UUID, page int, limit int) ([]ProcurementRequest, int64, error) {
 	var list []ProcurementRequest
-	query := r.db.Preload("Creator").Preload("Structure").Preload("AssignedTo").Preload("Items.StockCode").
-		Order("created_at desc")
+	var total int64
+
+	query := r.db.Model(&ProcurementRequest{})
 
 	if step != "" && step != "ALL" {
 		query = query.Where("current_step = ?", step)
@@ -49,10 +50,20 @@ func (r *procurementRequestRepository) FindAll(step string, status string, searc
 			"%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
-	if err := query.Find(&list).Error; err != nil {
-		return nil, err
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return list, nil
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Preload("Creator").Preload("Structure").Preload("AssignedTo").Preload("Items.StockCode").
+		Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 func (r *procurementRequestRepository) GetByID(id uuid.UUID) (*ProcurementRequest, error) {

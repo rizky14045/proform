@@ -7,7 +7,7 @@ import (
 )
 
 type StockCodeService interface {
-	FindAll(search string, status string) ([]StockCode, error)
+	FindAll(search string, status string, page int, limit int) ([]StockCode, int64, error)
 	GetByID(id uuid.UUID) (*StockCode, error)
 	Create(creatorID *uuid.UUID, req StockCodeRequest) (*StockCode, error)
 	Update(id uuid.UUID, updaterID *uuid.UUID, req StockCodeRequest) (*StockCode, error)
@@ -22,8 +22,8 @@ func NewStockCodeService(repo StockCodeRepository) StockCodeService {
 	return &stockCodeService{repo: repo}
 }
 
-func (s *stockCodeService) FindAll(search string, status string) ([]StockCode, error) {
-	return s.repo.FindAll(search, status)
+func (s *stockCodeService) FindAll(search string, status string, page int, limit int) ([]StockCode, int64, error) {
+	return s.repo.FindAll(search, status, page, limit)
 }
 
 func (s *stockCodeService) GetByID(id uuid.UUID) (*StockCode, error) {

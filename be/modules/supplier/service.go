@@ -7,7 +7,7 @@ import (
 )
 
 type SupplierService interface {
-	FindAll(search string, status string) ([]Supplier, error)
+	FindAll(search string, status string, page int, limit int) ([]Supplier, int64, error)
 	GetByID(id uuid.UUID) (*Supplier, error)
 	Create(creatorID *uuid.UUID, req SupplierRequest) (*Supplier, error)
 	Update(id uuid.UUID, updaterID *uuid.UUID, req SupplierRequest) (*Supplier, error)
@@ -22,8 +22,8 @@ func NewSupplierService(repo SupplierRepository) SupplierService {
 	return &supplierService{repo: repo}
 }
 
-func (s *supplierService) FindAll(search string, status string) ([]Supplier, error) {
-	return s.repo.FindAll(search, status)
+func (s *supplierService) FindAll(search string, status string, page int, limit int) ([]Supplier, int64, error) {
+	return s.repo.FindAll(search, status, page, limit)
 }
 
 func (s *supplierService) GetByID(id uuid.UUID) (*Supplier, error) {

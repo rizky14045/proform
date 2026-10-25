@@ -9,14 +9,14 @@ import (
 
 type WarehouseService interface {
 	// Receipts
-	FindAllReceipts(search string, status string) ([]GoodsReceipt, error)
+	FindAllReceipts(search string, status string, page int, limit int) ([]GoodsReceipt, int64, error)
 	GetReceiptByID(id uuid.UUID) (*GoodsReceipt, error)
 	CreateReceipt(inspectorID uuid.UUID, creatorID *uuid.UUID, req GoodsReceiptRequest) (*GoodsReceipt, error)
 	UpdateReceipt(id uuid.UUID, updaterID *uuid.UUID, req GoodsReceiptRequest) (*GoodsReceipt, error)
 	DeleteReceipt(id uuid.UUID, deletedBy *uuid.UUID) error
 
 	// Acts
-	FindAllActs(actType string, status string) ([]InspectionAcceptanceAct, error)
+	FindAllActs(actType string, status string, page int, limit int) ([]InspectionAcceptanceAct, int64, error)
 	GetActByID(id uuid.UUID) (*InspectionAcceptanceAct, error)
 	CreateAct(creatorID *uuid.UUID, req InspectionActRequest) (*InspectionAcceptanceAct, error)
 	UpdateAct(id uuid.UUID, updaterID *uuid.UUID, req InspectionActRequest) (*InspectionAcceptanceAct, error)
@@ -37,8 +37,8 @@ func NewWarehouseService(repo WarehouseRepository, poRepo purchase_order.Purchas
 	}
 }
 
-func (s *warehouseService) FindAllReceipts(search string, status string) ([]GoodsReceipt, error) {
-	return s.repo.FindAllReceipts(search, status)
+func (s *warehouseService) FindAllReceipts(search string, status string, page int, limit int) ([]GoodsReceipt, int64, error) {
+	return s.repo.FindAllReceipts(search, status, page, limit)
 }
 
 func (s *warehouseService) GetReceiptByID(id uuid.UUID) (*GoodsReceipt, error) {
@@ -129,8 +129,8 @@ func (s *warehouseService) DeleteReceipt(id uuid.UUID, deletedBy *uuid.UUID) err
 	return s.repo.DeleteReceipt(id, deletedBy)
 }
 
-func (s *warehouseService) FindAllActs(actType string, status string) ([]InspectionAcceptanceAct, error) {
-	return s.repo.FindAllActs(actType, status)
+func (s *warehouseService) FindAllActs(actType string, status string, page int, limit int) ([]InspectionAcceptanceAct, int64, error) {
+	return s.repo.FindAllActs(actType, status, page, limit)
 }
 
 func (s *warehouseService) GetActByID(id uuid.UUID) (*InspectionAcceptanceAct, error) {
