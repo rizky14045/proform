@@ -25,6 +25,11 @@ func main() {
 		log.Fatal("Failed DB:", err)
 	}
 
+	// Run database migrations
+	if err := database.Migrate(db); err != nil {
+		log.Fatal("Failed database migration:", err)
+	}
+
 	rate, err := limiter.NewRateFromFormatted("100-M")
 	if err != nil {
 		log.Fatal(err)
