@@ -215,3 +215,31 @@ func (h *PurchaseOrderHandler) DestroyBG(c *gin.Context) {
 	}
 	helper.JsonResponse(c, true, "Bank Guarantee deleted successfully", nil, nil, http.StatusOK)
 }
+
+func (h *PurchaseOrderHandler) IndexChecklist(c *gin.Context) {
+	search := c.Query("search")
+	page, limit, _ := helper.GetPaginationParams(c)
+
+	list, total, err := h.service.FindAllChecklist(search, page, limit)
+	if err != nil {
+		helper.JsonResponse(c, false, "Gagal mengambil data checklist supplier", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Data checklist supplier berhasil diambil", list, pagination, nil, http.StatusOK)
+}
+
+func (h *PurchaseOrderHandler) CreateChecklist(c *gin.Context) {
+	var req ChecklistSupplier
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.JsonResponse(c, false, "Input tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CreateChecklist(&req); err != nil {
+		helper.JsonResponse(c, false, "Gagal menyimpan checklist supplier", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "Checklist supplier berhasil disimpan", req, nil, http.StatusCreated)
+}
+

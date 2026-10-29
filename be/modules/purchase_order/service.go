@@ -19,6 +19,10 @@ type PurchaseOrderService interface {
 	CreateBG(creatorID *uuid.UUID, req BankGuaranteeRequest) (*BankGuarantee, error)
 	UpdateBG(id uuid.UUID, updaterID *uuid.UUID, req BankGuaranteeRequest) (*BankGuarantee, error)
 	DeleteBG(id uuid.UUID, deletedBy *uuid.UUID) error
+
+	// Checklist Supplier
+	FindAllChecklist(search string, page int, limit int) ([]ChecklistSupplier, int64, error)
+	CreateChecklist(cs *ChecklistSupplier) error
 }
 
 type purchaseOrderService struct {
@@ -60,7 +64,12 @@ func (s *purchaseOrderService) CreatePO(creatorID *uuid.UUID, req PurchaseOrderR
 		SupplierID:       req.SupplierID,
 		PONumber:         num,
 		PODate:           req.PODate,
+		POAmount:         req.POAmount,
+		PPNAmount:        req.PPNAmount,
+		ContractAmount:   req.ContractAmount,
 		TotalAmount:      req.TotalAmount,
+		DeliveryLocation: req.DeliveryLocation,
+		PaymentTerms:     req.PaymentTerms,
 		DeliveryDeadline: req.DeliveryDeadline,
 		Status:           "ISSUED",
 		ContractType:     req.ContractType,
@@ -94,7 +103,22 @@ func (s *purchaseOrderService) UpdatePO(id uuid.UUID, updaterID *uuid.UUID, req 
 
 	po.SupplierID = req.SupplierID
 	po.PODate = req.PODate
+	if req.POAmount > 0 {
+		po.POAmount = req.POAmount
+	}
+	if req.PPNAmount > 0 {
+		po.PPNAmount = req.PPNAmount
+	}
+	if req.ContractAmount > 0 {
+		po.ContractAmount = req.ContractAmount
+	}
 	po.TotalAmount = req.TotalAmount
+	if req.DeliveryLocation != "" {
+		po.DeliveryLocation = req.DeliveryLocation
+	}
+	if req.PaymentTerms != "" {
+		po.PaymentTerms = req.PaymentTerms
+	}
 	po.DeliveryDeadline = req.DeliveryDeadline
 	po.ContractType = req.ContractType
 	po.IsAddendum = req.IsAddendum
@@ -175,3 +199,12 @@ func (s *purchaseOrderService) UpdateBG(id uuid.UUID, updaterID *uuid.UUID, req 
 func (s *purchaseOrderService) DeleteBG(id uuid.UUID, deletedBy *uuid.UUID) error {
 	return s.repo.DeleteBG(id, deletedBy)
 }
+
+func (s *purchaseOrderService) FindAllChecklist(search string, page int, limit int) ([]ChecklistSupplier, int64, error) {
+	return s.repo.FindAllChecklist(search, page, limit)
+}
+
+func (s *purchaseOrderService) CreateChecklist(cs *ChecklistSupplier) error {
+	return s.repo.CreateChecklist(cs)
+}
+

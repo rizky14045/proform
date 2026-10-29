@@ -12,6 +12,13 @@ type RoleRepository interface {
 	Create(role *Role) error
 	Update(role *Role) error
 	Delete(id uuid.UUID, deletedBy *uuid.UUID) error
+
+	// UserRole methods
+	FindUserRoles(search string, page int, limit int) ([]UserRole, int64, error)
+	GetUserRoleByID(id uuid.UUID) (*UserRole, error)
+	CreateUserRole(ur *UserRole) error
+	UpdateUserRole(ur *UserRole) error
+	DeleteUserRole(id uuid.UUID) error
 }
 
 type roleRepository struct {
@@ -80,3 +87,44 @@ func (r *roleRepository) Delete(id uuid.UUID, deletedBy *uuid.UUID) error {
 	}
 	return r.db.Delete(&Role{}, "id = ?", id).Error
 }
+
+func (r *roleRepository) FindUserRoles(search string, page int, limit int) ([]UserRole, int64, error) {
+	var userRoles []UserRole
+	var total int64
+
+	query := r.db.Model(&UserRole{}).Preload("Role")
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Order("created_at desc").Find(&userRoles).Error; err != nil {
+		return nil, 0, err
+	}
+	return userRoles, total, nil
+}
+
+func (r *roleRepository) GetUserRoleByID(id uuid.UUID) (*UserRole, error) {
+	var ur UserRole
+	if err := r.db.Preload("Role").First(&ur, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &ur, nil
+}
+
+func (r *roleRepository) CreateUserRole(ur *UserRole) error {
+	return r.db.Create(ur).Error
+}
+
+func (r *roleRepository) UpdateUserRole(ur *UserRole) error {
+	return r.db.Save(ur).Error
+}
+
+func (r *roleRepository) DeleteUserRole(id uuid.UUID) error {
+	return r.db.Delete(&UserRole{}, "id = ?", id).Error
+}
+

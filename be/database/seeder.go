@@ -176,6 +176,15 @@ func SeedDatabase(db *gorm.DB) {
 			// SYARAT_KHUSUS
 			{Group: "SYARAT_KHUSUS", Description: "Mill Test Certificate"},
 			{Group: "SYARAT_KHUSUS", Description: "Sertifikat Kalibrasi Pabrikan"},
+			// LAMPIRAN_PPA
+			{Group: "LAMPIRAN_PPA", Description: "Formulir Pendaftaran & Surat Kuasa"},
+			{Group: "LAMPIRAN_PPA", Description: "Formulir Surat Penawaran Harga"},
+			{Group: "LAMPIRAN_PPA", Description: "Formulir Spesifikasi Teknis & Brosur"},
+			// KELENGKAPAN_DOKUMEN
+			{Group: "KELENGKAPAN_DOKUMEN", Description: "Dokumen Administrasi Perusahaan (SIUP/NIB/TDP)"},
+			{Group: "KELENGKAPAN_DOKUMEN", Description: "Dokumen Teknis & Metodologi Kerja"},
+			{Group: "KELENGKAPAN_DOKUMEN", Description: "Surat Perjanjian / SPK Acuan"},
+			{Group: "KELENGKAPAN_DOKUMEN", Description: "Jaminan Penawaran / Bank Garansi"},
 		}
 		for i := range generals {
 			generals[i].ID = uuid.New()

@@ -20,6 +20,9 @@ const badgeVariants = cva(
       variant: {
         outline: "border border-current bg-background  ",
         soft: "text-current bg-current/30  hover:text-primary-foreground",
+        destructive: "bg-destructive border-transparent text-destructive-foreground",
+        secondary: "bg-secondary border-transparent text-foreground",
+        default: "border-transparent bg-primary text-primary-foreground",
       },
     },
     compoundVariants: [
@@ -111,7 +114,7 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-  variant?: "outline" | "soft";
+  variant?: "outline" | "soft" | "destructive" | "secondary" | "default";
   color?:
     | "default"
     | "destructive"

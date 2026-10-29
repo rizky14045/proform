@@ -11,10 +11,13 @@ type Supplier struct {
 	ID              uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Code            string         `json:"code" gorm:"type:varchar(50);unique;not null"`
 	Name            string         `json:"name" gorm:"type:varchar(200);not null"`
+	NPWP            string         `json:"npwp" gorm:"column:npwp;type:varchar(50)"`
+	Category        string         `json:"category" gorm:"column:category;type:varchar(50)"` // BARANG, JASA
 	PICName         string         `json:"pic_name" gorm:"type:varchar(100)"`
 	Phone           string         `json:"phone" gorm:"type:varchar(50)"`
 	Email           string         `json:"email" gorm:"type:varchar(150)"`
 	Address         string         `json:"address" gorm:"type:text"`
+	City            string         `json:"city" gorm:"column:city;type:varchar(100)"`
 	Fax             string         `json:"fax" gorm:"type:varchar(50)"`
 	Status          string         `json:"status" gorm:"type:varchar(30);default:'ACTIVE'"`
 	OrderPICName    string         `json:"order_pic_name" gorm:"type:varchar(100)"`

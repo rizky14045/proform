@@ -47,7 +47,21 @@ func (h *ProcurementRequestHandler) Index(c *gin.Context) {
 }
 
 func (h *ProcurementRequestHandler) Show(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
+	paramID := c.Param("id")
+	if paramID == "technical-evaluations" || paramID == "evaluations" {
+		h.Evaluations(c)
+		return
+	}
+	if paramID == "distributions" {
+		h.Distributions(c)
+		return
+	}
+	if paramID == "addendums" {
+		h.Addendums(c)
+		return
+	}
+
+	id, err := uuid.Parse(paramID)
 	if err != nil {
 		helper.JsonResponse(c, false, "Invalid ID", nil, err.Error(), http.StatusBadRequest)
 		return
@@ -271,3 +285,82 @@ func (h *ProcurementRequestHandler) Reject(c *gin.Context) {
 	}
 	helper.JsonResponse(c, true, "Procurement request rejected", res, nil, http.StatusOK)
 }
+
+// Sub-modules: Distributions
+func (h *ProcurementRequestHandler) Distributions(c *gin.Context) {
+	search := c.Query("search")
+	page, limit, _ := helper.GetPaginationParams(c)
+	list, total, err := h.service.FindDistributions(search, page, limit)
+	if err != nil {
+		helper.JsonResponse(c, false, "Gagal mengambil data distribusi permintaan", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Data distribusi permintaan berhasil diambil", list, pagination, nil, http.StatusOK)
+}
+
+func (h *ProcurementRequestHandler) CreateDistribution(c *gin.Context) {
+	var req RequestDistribution
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.JsonResponse(c, false, "Input tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := h.service.CreateDistribution(&req); err != nil {
+		helper.JsonResponse(c, false, "Gagal menyimpan distribusi permintaan", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "Distribusi permintaan berhasil disimpan", req, nil, http.StatusCreated)
+}
+
+// Sub-modules: Addendums
+func (h *ProcurementRequestHandler) Addendums(c *gin.Context) {
+	search := c.Query("search")
+	page, limit, _ := helper.GetPaginationParams(c)
+	list, total, err := h.service.FindAddendums(search, page, limit)
+	if err != nil {
+		helper.JsonResponse(c, false, "Gagal mengambil data addendum permintaan", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Data addendum permintaan berhasil diambil", list, pagination, nil, http.StatusOK)
+}
+
+func (h *ProcurementRequestHandler) CreateAddendum(c *gin.Context) {
+	var req RequestAddendum
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.JsonResponse(c, false, "Input tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := h.service.CreateAddendum(&req); err != nil {
+		helper.JsonResponse(c, false, "Gagal menyimpan addendum permintaan", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "Addendum permintaan berhasil disimpan", req, nil, http.StatusCreated)
+}
+
+// Sub-modules: Evaluations
+func (h *ProcurementRequestHandler) Evaluations(c *gin.Context) {
+	search := c.Query("search")
+	page, limit, _ := helper.GetPaginationParams(c)
+	list, total, err := h.service.FindEvaluations(search, page, limit)
+	if err != nil {
+		helper.JsonResponse(c, false, "Gagal mengambil data evaluasi teknis", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Data evaluasi teknis berhasil diambil", list, pagination, nil, http.StatusOK)
+}
+
+func (h *ProcurementRequestHandler) CreateEvaluation(c *gin.Context) {
+	var req TechnicalEvaluation
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.JsonResponse(c, false, "Input tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := h.service.CreateEvaluation(&req); err != nil {
+		helper.JsonResponse(c, false, "Gagal menyimpan evaluasi teknis", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "Evaluasi teknis berhasil disimpan", req, nil, http.StatusCreated)
+}
+

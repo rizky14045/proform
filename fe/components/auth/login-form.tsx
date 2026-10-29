@@ -31,12 +31,21 @@ const schema = z.object({
   password: z.string().min(1, { message: "Password wajib diisi" }),
 });
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 const LogInForm = () => {
   const [isPending, startTransition] = useTransition();
   const [passwordType, setPasswordType] = useState("password");
   const isDesktop2xl = useMediaQuery("(max-width: 1530px)");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "session_expired") {
+      toast.error("Sesi Anda telah berakhir atau tidak valid. Silakan masuk kembali.");
+    }
+  }, [searchParams]);
 
   const togglePasswordType = () => {
     if (passwordType === "text") {
@@ -64,6 +73,9 @@ const LogInForm = () => {
 
   const onSubmit = (data: { email: string; password: string }) => {
     startTransition(async () => {
+      // Clear stale token first to ensure fresh session
+      authService.logout();
+
       let beToken: string | null = null;
       try {
         const loginRes: any = await authService.login({

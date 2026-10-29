@@ -6,9 +6,11 @@ import (
 	"template/modules/engineering_estimate"
 	"template/modules/executive_docket"
 	"template/modules/general"
+	"template/modules/master_document"
 	"template/modules/owner_estimate"
 	"template/modules/procurement_request"
 	"template/modules/purchase_order"
+	"template/modules/report"
 	"template/modules/role"
 	"template/modules/stock_code"
 	"template/modules/structure"
@@ -34,6 +36,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		general.SetupRoutes(api, db)
 		supplier.SetupRoutes(api, db)
 		stock_code.SetupRoutes(api, db)
+		master_document.SetupRoutes(api, db)
 		approval.SetupRoutes(api, db)
 
 		// Procurement Workflow
@@ -45,6 +48,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		supplier_evaluation.SetupRoutes(api, db)
 		task_delegation.SetupRoutes(api, db)
 		executive_docket.SetupRoutes(api, db)
+		report.SetupRoutes(api, db)
 	}
 
 	// Support both /api and /api/v1

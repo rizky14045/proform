@@ -1,5 +1,6 @@
 import apiClient from "./api";
 import { ApiResponse, User } from "@/types";
+import { signOut } from "next-auth/react";
 
 export interface LoginPayload {
   username?: string;
@@ -41,23 +42,52 @@ export const authService = {
 
   logout: () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user_info");
-      sessionStorage.clear();
+      try {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_info");
+        sessionStorage.clear();
 
-      const cookies = [
-        "access_token",
-        "token",
-        "next-auth.session-token",
-        "__Secure-next-auth.session-token",
-        "next-auth.csrf-token",
-        "next-auth.callback-url",
-      ];
-      cookies.forEach((c) => {
-        document.cookie = `${c}=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-        document.cookie = `${c}=; path=/; domain=${window.location.hostname}; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      });
+        const cookies = [
+          "access_token",
+          "token",
+          "next-auth.session-token",
+          "__Secure-next-auth.session-token",
+          "next-auth.csrf-token",
+          "next-auth.callback-url",
+        ];
+
+        const domains = [
+          "",
+          window.location.hostname,
+          `.${window.location.hostname}`,
+          "localhost",
+          "127.0.0.1",
+        ];
+
+        cookies.forEach((c) => {
+          domains.forEach((d) => {
+            const domainStr = d ? `; domain=${d}` : "";
+            document.cookie = `${c}=; path=/${domainStr}; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+            document.cookie = `${c}=; path=${domainStr}; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+          });
+        });
+      } catch (err) {
+        console.error("Error clearing auth session:", err);
+      }
+    }
+  },
+
+  performFullLogout: async () => {
+    if (typeof window === "undefined") return;
+    try {
+      authService.logout();
+      await signOut({ redirect: false }).catch(() => {});
+    } catch (e) {
+      console.warn("Logout error:", e);
+    } finally {
+      authService.logout();
+      window.location.href = "/auth/login?logout=1";
     }
   },
 
@@ -77,9 +107,13 @@ export const authService = {
 
   getToken: (): string | null => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("access_token") || localStorage.getItem("token");
+      const t = localStorage.getItem("access_token") || localStorage.getItem("token");
+      if (t && t !== "undefined" && t !== "null" && t.trim() !== "") {
+        return t.trim();
+      }
     }
     return null;
   },
 };
+
 

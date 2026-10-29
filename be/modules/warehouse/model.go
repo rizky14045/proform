@@ -82,9 +82,114 @@ func (a *InspectionAcceptanceAct) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// 4.9.1 Distribusi Penerimaan
+type WarehouseDistribution struct {
+	ID              uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	FormNumber      string         `json:"form_number" gorm:"column:form_number;type:varchar(100);unique;not null"`
+	FormDate        time.Time      `json:"form_date" gorm:"not null"`
+	PONumber        string         `json:"po_number" gorm:"type:varchar(100);not null"`
+	JobName         string         `json:"job_name" gorm:"type:varchar(255)"`
+	DistributedToID uuid.UUID      `json:"distributed_to_id" gorm:"type:uuid;not null"`
+	DistributedTo   *user.User     `json:"distributed_to,omitempty" gorm:"foreignKey:DistributedToID"`
+	SupportingFile  string         `json:"supporting_file" gorm:"type:varchar(255)"`
+	Notes           string         `json:"notes" gorm:"type:text"`
+	Status          string         `json:"status" gorm:"type:varchar(50);default:'POST'"`
+	CreatedByID     *uuid.UUID     `json:"created_by" gorm:"column:created_by;type:uuid"`
+	UpdatedByID     *uuid.UUID     `json:"updated_by" gorm:"column:updated_by;type:uuid"`
+	DeletedByID     *uuid.UUID     `json:"deleted_by" gorm:"column:deleted_by;type:uuid"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (wd *WarehouseDistribution) BeforeCreate(tx *gorm.DB) error {
+	if wd.ID == uuid.Nil {
+		wd.ID = uuid.New()
+	}
+	if wd.Status == "" {
+		wd.Status = "POST"
+	}
+	return nil
+}
+
+// 4.9.2 Pemeriksaan Penerimaan Barang
+type GoodsReceiptInspection struct {
+	ID                 uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	FormNumber         string         `json:"form_number" gorm:"column:form_number;type:varchar(100);unique;not null"`
+	FormDate           time.Time      `json:"form_date" gorm:"not null"`
+	PONumber           string         `json:"po_number" gorm:"type:varchar(100);not null"`
+	SupplierName       string         `json:"supplier_name" gorm:"type:varchar(200);not null"`
+	JobName            string         `json:"job_name" gorm:"type:varchar(255)"`
+	ReceivedItemCount  float64        `json:"received_item_count" gorm:"type:numeric(14,4);default:0.00"`
+	PackagingCount     int            `json:"packaging_count" gorm:"default:1"`
+	ConditionGood      bool           `json:"condition_good" gorm:"default:true"`
+	DeliveryNoteNo     string         `json:"delivery_note_no" gorm:"type:varchar(100)"`
+	DeliveryNoteDate   *time.Time     `json:"delivery_note_date"`
+	SupportingFile     string         `json:"supporting_file" gorm:"type:varchar(255)"`
+	Notes              string         `json:"notes" gorm:"type:text"`
+	Status             string         `json:"status" gorm:"type:varchar(50);default:'POST'"`
+	CreatedByID        *uuid.UUID     `json:"created_by" gorm:"column:created_by;type:uuid"`
+	UpdatedByID        *uuid.UUID     `json:"updated_by" gorm:"column:updated_by;type:uuid"`
+	DeletedByID        *uuid.UUID     `json:"deleted_by" gorm:"column:deleted_by;type:uuid"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (gri *GoodsReceiptInspection) BeforeCreate(tx *gorm.DB) error {
+	if gri.ID == uuid.Nil {
+		gri.ID = uuid.New()
+	}
+	if gri.Status == "" {
+		gri.Status = "POST"
+	}
+	return nil
+}
+
+// 4.9.5 Penyelesaian Pekerjaan (Jasa)
+type JobCompletion struct {
+	ID                   uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	FormNumber           string         `json:"form_number" gorm:"column:form_number;type:varchar(100);unique;not null"`
+	FormDate             time.Time      `json:"form_date" gorm:"not null"`
+	PONumber             string         `json:"po_number" gorm:"type:varchar(100);not null"`
+	SupplierName         string         `json:"supplier_name" gorm:"type:varchar(200);not null"`
+	JobName              string         `json:"job_name" gorm:"type:varchar(255)"`
+	CompletionPercentage float64        `json:"completion_percentage" gorm:"type:numeric(5,2);default:100.00"`
+	StartDate            *time.Time     `json:"start_date"`
+	CompletionDate       *time.Time     `json:"completion_date"`
+	SupportingFile       string         `json:"supporting_file" gorm:"type:varchar(255)"`
+	Notes                string         `json:"notes" gorm:"type:text"`
+	Status               string         `json:"status" gorm:"type:varchar(50);default:'IN_PROCESS'"`
+	CreatedByID          *uuid.UUID     `json:"created_by" gorm:"column:created_by;type:uuid"`
+	UpdatedByID          *uuid.UUID     `json:"updated_by" gorm:"column:updated_by;type:uuid"`
+	DeletedByID          *uuid.UUID     `json:"deleted_by" gorm:"column:deleted_by;type:uuid"`
+	CreatedAt            time.Time      `json:"created_at"`
+	UpdatedAt            time.Time      `json:"updated_at"`
+	DeletedAt            gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (jc *JobCompletion) BeforeCreate(tx *gorm.DB) error {
+	if jc.ID == uuid.Nil {
+		jc.ID = uuid.New()
+	}
+	if jc.Status == "" {
+		jc.Status = "IN_PROCESS"
+	}
+	return nil
+}
+
 func MigrateWarehouse(db *gorm.DB) error {
 	if err := db.AutoMigrate(&GoodsReceipt{}); err != nil {
 		return err
 	}
-	return db.AutoMigrate(&InspectionAcceptanceAct{})
+	if err := db.AutoMigrate(&InspectionAcceptanceAct{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(&WarehouseDistribution{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(&GoodsReceiptInspection{}); err != nil {
+		return err
+	}
+	return db.AutoMigrate(&JobCompletion{})
 }

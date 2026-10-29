@@ -12,6 +12,7 @@ import (
 type User struct {
 	ID           uuid.UUID            `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	NID          string               `json:"nid" gorm:"column:nid;type:varchar(50);unique;not null"`
+	NIP          string               `json:"nip" gorm:"column:nip;type:varchar(50)"`
 	Name         string               `json:"name" gorm:"type:varchar(150);not null"`
 	Email        string               `json:"email" gorm:"type:varchar(150);unique;not null"`
 	NIK          string               `json:"nik" gorm:"column:nik;type:varchar(16)"`

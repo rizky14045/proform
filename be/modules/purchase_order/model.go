@@ -18,7 +18,12 @@ type PurchaseOrder struct {
 	Supplier         supplier.Supplier                     `json:"supplier" gorm:"foreignKey:SupplierID"`
 	PONumber         string                                `json:"po_number" gorm:"column:po_number;type:varchar(100);unique;not null;index"`
 	PODate           time.Time                             `json:"po_date" gorm:"not null"`
+	POAmount         float64                               `json:"po_amount" gorm:"column:po_amount;type:numeric(18,2)"`
+	PPNAmount        float64                               `json:"ppn_amount" gorm:"column:ppn_amount;type:numeric(18,2)"`
+	ContractAmount   float64                               `json:"contract_amount" gorm:"column:contract_amount;type:numeric(18,2)"`
 	TotalAmount      float64                               `json:"total_amount" gorm:"column:total_amount;type:numeric(18,2);not null"`
+	DeliveryLocation string                                `json:"delivery_location" gorm:"column:delivery_location;type:varchar(255)"`
+	PaymentTerms     string                                `json:"payment_terms" gorm:"column:payment_terms;type:varchar(255)"`
 	DeliveryDeadline time.Time                             `json:"delivery_deadline" gorm:"not null"`
 	Status           string                                `json:"status" gorm:"type:varchar(50);not null;default:'ISSUED'"` // ISSUED, IN_RECEIVING, COMPLETED
 	ContractType     string                                `json:"contract_type" gorm:"type:varchar(50)"`
@@ -80,9 +85,133 @@ func (b *BankGuarantee) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// 4.8.18 Addendum PO
+type POAddendum struct {
+	ID             uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	AddendumNumber string         `json:"addendum_number" gorm:"column:addendum_number;type:varchar(100);unique;not null"`
+	AddendumDate   time.Time      `json:"addendum_date" gorm:"not null"`
+	POID           uuid.UUID      `json:"po_id" gorm:"type:uuid;not null;index"`
+	PO             PurchaseOrder  `json:"po" gorm:"foreignKey:POID"`
+	JobName        string         `json:"job_name" gorm:"type:varchar(255)"`
+	CompanyName    string         `json:"company_name" gorm:"type:varchar(200)"`
+	TotalAmount    float64        `json:"total_amount" gorm:"type:numeric(18,2);default:0.00"`
+	Reason         string         `json:"reason" gorm:"type:text"`
+	SupportingFile string         `json:"supporting_file" gorm:"type:varchar(255)"`
+	Notes          string         `json:"notes" gorm:"type:text"`
+	Status         string         `json:"status" gorm:"type:varchar(50);default:'IN_PROCESS'"`
+	CreatedByID    *uuid.UUID     `json:"created_by" gorm:"column:created_by;type:uuid"`
+	UpdatedByID    *uuid.UUID     `json:"updated_by" gorm:"column:updated_by;type:uuid"`
+	DeletedByID    *uuid.UUID     `json:"deleted_by" gorm:"column:deleted_by;type:uuid"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (pa *POAddendum) BeforeCreate(tx *gorm.DB) error {
+	if pa.ID == uuid.Nil {
+		pa.ID = uuid.New()
+	}
+	if pa.Status == "" {
+		pa.Status = "IN_PROCESS"
+	}
+	return nil
+}
+
+// 4.8.19 PO Delivery Order
+type PODeliveryOrder struct {
+	ID             uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	DONumber       string         `json:"do_number" gorm:"column:do_number;type:varchar(100);unique;not null"`
+	DODate         time.Time      `json:"do_date" gorm:"not null"`
+	ContractNumber string         `json:"contract_number" gorm:"type:varchar(100);not null"`
+	RequestNumber  string         `json:"request_number" gorm:"type:varchar(100)"`
+	CompanyName    string         `json:"company_name" gorm:"type:varchar(200);not null"`
+	JobName        string         `json:"job_name" gorm:"type:varchar(255)"`
+	OrderedQuantity int           `json:"ordered_quantity" gorm:"column:ordered_quantity;default:1"`
+	TotalAmount    float64        `json:"total_amount" gorm:"type:numeric(18,2);default:0.00"`
+	Reason         string         `json:"reason" gorm:"type:text"`
+	SupportingFile string         `json:"supporting_file" gorm:"type:varchar(255)"`
+	Notes          string         `json:"notes" gorm:"type:text"`
+	Status         string         `json:"status" gorm:"type:varchar(50);default:'IN_PROCESS'"`
+	CreatedByID    *uuid.UUID     `json:"created_by" gorm:"column:created_by;type:uuid"`
+	UpdatedByID    *uuid.UUID     `json:"updated_by" gorm:"column:updated_by;type:uuid"`
+	DeletedByID    *uuid.UUID     `json:"deleted_by" gorm:"column:deleted_by;type:uuid"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (pdo *PODeliveryOrder) BeforeCreate(tx *gorm.DB) error {
+	if pdo.ID == uuid.Nil {
+		pdo.ID = uuid.New()
+	}
+	if pdo.Status == "" {
+		pdo.Status = "IN_PROCESS"
+	}
+	return nil
+}
+
+// 4.5 Checklist Dokumen Supplier
+type ChecklistSupplier struct {
+	ID          uuid.UUID               `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	FormNumber  string                  `json:"form_number" gorm:"column:form_number;type:varchar(100);unique;not null"`
+	FormDate    time.Time               `json:"form_date" gorm:"not null"`
+	PONumber    string                  `json:"po_number" gorm:"type:varchar(100);not null"`
+	CompanyName string                  `json:"company_name" gorm:"type:varchar(200);not null"`
+	JobName     string                  `json:"job_name" gorm:"type:varchar(255)"`
+	Notes       string                  `json:"notes" gorm:"type:text"`
+	Status      string                  `json:"status" gorm:"type:varchar(50);default:'POST'"` // IN_PROCESS, POST
+	Items       []ChecklistSupplierItem `json:"items,omitempty" gorm:"foreignKey:ChecklistID;constraint:OnDelete:CASCADE"`
+	CreatedByID *uuid.UUID              `json:"created_by" gorm:"column:created_by;type:uuid"`
+	UpdatedByID *uuid.UUID              `json:"updated_by" gorm:"column:updated_by;type:uuid"`
+	DeletedByID *uuid.UUID              `json:"deleted_by" gorm:"column:deleted_by;type:uuid"`
+	CreatedAt   time.Time               `json:"created_at"`
+	UpdatedAt   time.Time               `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt          `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (cs *ChecklistSupplier) BeforeCreate(tx *gorm.DB) error {
+	if cs.ID == uuid.Nil {
+		cs.ID = uuid.New()
+	}
+	if cs.Status == "" {
+		cs.Status = "POST"
+	}
+	return nil
+}
+
+type ChecklistSupplierItem struct {
+	ID          uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	ChecklistID uuid.UUID      `json:"checklist_id" gorm:"type:uuid;not null;index"`
+	Requirement string         `json:"requirement" gorm:"type:varchar(200);not null"` // e.g. SURAT GARANSI BARANG, SURAT GARANSI JASA, SURAT KEASLIAN BARANG, SURAT JALAN
+	IsAvailable bool           `json:"is_available" gorm:"default:true"`
+	Notes       string         `json:"notes" gorm:"type:varchar(255)"` // e.g. "3 rangkap"
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+}
+
+func (csi *ChecklistSupplierItem) BeforeCreate(tx *gorm.DB) error {
+	if csi.ID == uuid.Nil {
+		csi.ID = uuid.New()
+	}
+	return nil
+}
+
 func MigratePurchaseOrder(db *gorm.DB) error {
 	if err := db.AutoMigrate(&PurchaseOrder{}); err != nil {
 		return err
 	}
-	return db.AutoMigrate(&BankGuarantee{})
+	if err := db.AutoMigrate(&BankGuarantee{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(&POAddendum{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(&PODeliveryOrder{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(&ChecklistSupplier{}); err != nil {
+		return err
+	}
+	return db.AutoMigrate(&ChecklistSupplierItem{})
 }

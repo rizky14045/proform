@@ -26,6 +26,14 @@ func SetupRoutes(router *gin.RouterGroup, db *gorm.DB) {
 		app.GET("", handler.IndexReceipts)
 		app.GET("/", handler.IndexReceipts)
 
+		// Sub-module Aliases
+		app.GET("/distributions", handler.IndexReceipts)
+		app.POST("/distributions", handler.CreateReceipt)
+		app.GET("/inspections", handler.IndexReceipts)
+		app.POST("/inspections", handler.CreateReceipt)
+		app.GET("/completions", handler.IndexActs)
+		app.POST("/completions", handler.CreateAct)
+
 		// Receipts
 		app.GET("/receipts", handler.IndexReceipts)
 		app.GET("/goods-receipts", handler.IndexReceipts)

@@ -29,7 +29,7 @@ const SoonerToastDemo = () => {
       </Button>
       <Button
         color="info"
-        onClick={() => toast.info("Event has been created", {})}
+        onClick={() => toast("Event has been created", {})}
       >
         Toast Info
       </Button>
@@ -48,7 +48,7 @@ const SoonerToastDemo = () => {
         color="info"
         variant="outline"
         onClick={() =>
-          toast.info("Event has been created", {
+          toast("Event has been created", {
             action: {
               label: "Undo",
               onClick: () => console.log("Undo"),

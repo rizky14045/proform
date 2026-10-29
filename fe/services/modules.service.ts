@@ -142,6 +142,120 @@ export const masterService = {
   createGeneral: (payload: any) => apiClient.post<any, ApiResponse<General>>("/generals/", payload),
   updateGeneral: (id: string, payload: any) => apiClient.put<any, ApiResponse<General>>(`/generals/${id}`, payload),
   deleteGeneral: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/generals/${id}`),
+
+  // Master Documents (Bab 3.9)
+  getMasterDocuments: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/master-documents/", { params: resolveParams(params) }),
+  createMasterDocument: (payload: any) => apiClient.post<any, ApiResponse<any>>("/master-documents/", payload),
+  updateMasterDocument: (id: string, payload: any) => apiClient.put<any, ApiResponse<any>>(`/master-documents/${id}`, payload),
+  deleteMasterDocument: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/master-documents/${id}`),
+
+  // User Roles (Bab 3.3)
+  getUserRoles: (userId?: string) => apiClient.get<any, ApiResponse<any[]>>("/roles/user-roles", { params: { user_id: userId } }),
+  assignUserRole: (payload: any) => apiClient.post<any, ApiResponse<any>>("/roles/user-roles", payload),
+  removeUserRole: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/roles/user-roles/${id}`),
+
+  // Approval Structures (Bab 3.6)
+  getApprovalStructures: (moduleCode?: string) => apiClient.get<any, ApiResponse<any[]>>("/approval-structures/", { params: { module_code: moduleCode } }),
+  createApprovalStructure: (payload: any) => apiClient.post<any, ApiResponse<any>>("/approval-structures/", payload),
+  updateApprovalStructure: (id: string, payload: any) => apiClient.put<any, ApiResponse<any>>(`/approval-structures/${id}`, payload),
+  deleteApprovalStructure: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/approval-structures/${id}`),
+};
+
+// Sub-Modul Users Service (Bab 4.6)
+export const usersSubmoduleService = {
+  // 4.6.2 Distribusi Permintaan
+  getDistributions: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/procurement-requests/distributions", { params: resolveParams(params) }),
+  createDistribution: (payload: any) => apiClient.post<any, ApiResponse<any>>("/procurement-requests/distributions", payload),
+
+  // 4.6.4 Usulan Addendum
+  getAddendums: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/procurement-requests/addendums", { params: resolveParams(params) }),
+  createAddendum: (payload: any) => apiClient.post<any, ApiResponse<any>>("/procurement-requests/addendums", payload),
+
+  // 4.6.5 Evaluasi Teknis
+  getEvaluations: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/procurement-requests/technical-evaluations", { params: resolveParams(params) }),
+  createEvaluation: (payload: any) => apiClient.post<any, ApiResponse<any>>("/procurement-requests/technical-evaluations", payload),
+};
+
+// Sub-Modul Inventory Service (Bab 4.7)
+export const inventorySubmoduleService = {
+  // 4.7.1 Distribusi Perencana
+  getDistributions: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/engineering-estimates/distributions", { params: resolveParams(params) }),
+  createDistribution: (payload: any) => apiClient.post<any, ApiResponse<any>>("/engineering-estimates/distributions", payload),
+
+  // 4.7.2 Usulan Pengadaan RO
+  getROs: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/engineering-estimates/ros", { params: resolveParams(params) }),
+  createRO: (payload: any) => apiClient.post<any, ApiResponse<any>>("/engineering-estimates/ros", payload),
+
+  // 4.7.5 Adendum RKS
+  getRKSAddendums: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/engineering-estimates/rks-addendums", { params: resolveParams(params) }),
+  createRKSAddendum: (payload: any) => apiClient.post<any, ApiResponse<any>>("/engineering-estimates/rks-addendums", payload),
+
+  // 4.7.6 Review VFM Perencanaan
+  getVFMReviews: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/engineering-estimates/vfm-reviews", { params: resolveParams(params) }),
+  createVFMReview: (payload: any) => apiClient.post<any, ApiResponse<any>>("/engineering-estimates/vfm-reviews", payload),
+
+  // 4.7.7 Izin Penunjukan Langsung
+  getDirectPermits: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/engineering-estimates/direct-permits", { params: resolveParams(params) }),
+  createDirectPermit: (payload: any) => apiClient.post<any, ApiResponse<any>>("/engineering-estimates/direct-permits", payload),
+};
+
+// Sub-Modul Pengadaan Service (Bab 4.8)
+export const pengadaanSubmoduleService = {
+  // 4.8.1 Distribusi Pengadaan
+  getAssignments: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/owner-estimates/assignments", { params: resolveParams(params) }),
+  createAssignment: (payload: any) => apiClient.post<any, ApiResponse<any>>("/owner-estimates/assignments", payload),
+
+  // 4.8.2 SPMK
+  getSPMKs: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/owner-estimates/spmks", { params: resolveParams(params) }),
+  createSPMK: (payload: any) => apiClient.post<any, ApiResponse<any>>("/owner-estimates/spmks", payload),
+
+  // 4.8.4 Permintaan Penawaran RFQ
+  getQuotations: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/owner-estimates/rfqs", { params: resolveParams(params) }),
+  createQuotation: (payload: any) => apiClient.post<any, ApiResponse<any>>("/owner-estimates/rfqs", payload),
+
+  // 4.8.5 Pengumuman Pengadaan
+  getAnnouncements: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/owner-estimates/announcements", { params: resolveParams(params) }),
+  createAnnouncement: (payload: any) => apiClient.post<any, ApiResponse<any>>("/owner-estimates/announcements", payload),
+
+  // 4.8.16 Kontrak Payung
+  getUmbrellaContracts: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/owner-estimates/umbrella-contracts", { params: resolveParams(params) }),
+  createUmbrellaContract: (payload: any) => apiClient.post<any, ApiResponse<any>>("/owner-estimates/umbrella-contracts", payload),
+
+  // 4.8.18 Addendum PO
+  getPOAddendums: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/purchase-orders/addendums", { params: resolveParams(params) }),
+  createPOAddendum: (payload: any) => apiClient.post<any, ApiResponse<any>>("/purchase-orders/addendums", payload),
+
+  // 4.8.19 PO DO
+  getPODOs: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/purchase-orders/delivery-orders", { params: resolveParams(params) }),
+  createPODO: (payload: any) => apiClient.post<any, ApiResponse<any>>("/purchase-orders/delivery-orders", payload),
+  getDeliveryOrders: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/purchase-orders/delivery-orders", { params: resolveParams(params) }),
+  createDeliveryOrder: (payload: any) => apiClient.post<any, ApiResponse<any>>("/purchase-orders/delivery-orders", payload),
+
+  // 4.5 Checklist Dokumen Supplier
+  getChecklists: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/purchase-orders/checklists", { params: resolveParams(params) }),
+  createChecklist: (payload: any) => apiClient.post<any, ApiResponse<any>>("/purchase-orders/checklists", payload),
+};
+
+// Sub-Modul Gudang Service (Bab 4.9)
+export const gudangSubmoduleService = {
+  // 4.9.1 Distribusi Penerimaan
+  getDistributions: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/warehouse/distributions", { params: resolveParams(params) }),
+  createDistribution: (payload: any) => apiClient.post<any, ApiResponse<any>>("/warehouse/distributions", payload),
+
+  // 4.9.2 Pemeriksaan Penerimaan Barang
+  getInspections: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/warehouse/inspections", { params: resolveParams(params) }),
+  createInspection: (payload: any) => apiClient.post<any, ApiResponse<any>>("/warehouse/inspections", payload),
+
+  // 4.9.5 Penyelesaian Pekerjaan Jasa
+  getCompletions: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/warehouse/completions", { params: resolveParams(params) }),
+  createCompletion: (payload: any) => apiClient.post<any, ApiResponse<any>>("/warehouse/completions", payload),
+};
+
+// Report & Arsip Service (Bab 5)
+export const reportService = {
+  getRevisionLogs: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/reports/revisions", { params: resolveParams(params) }),
+  getArchiveDocuments: (params?: PaginationQueryParams | string) => apiClient.get<any, ApiResponse<any[]>>("/reports/archives", { params: resolveParams(params) }),
+  uploadArchiveDocument: (payload: any) => apiClient.post<any, ApiResponse<any>>("/reports/archives", payload),
 };
 
 // Audit Log Service

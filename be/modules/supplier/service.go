@@ -39,10 +39,13 @@ func (s *supplierService) Create(creatorID *uuid.UUID, req SupplierRequest) (*Su
 	supplier := Supplier{
 		Code:            req.Code,
 		Name:            req.Name,
+		NPWP:            req.NPWP,
+		Category:        req.Category,
 		PICName:         req.PICName,
 		Phone:           req.Phone,
 		Email:           req.Email,
 		Address:         req.Address,
+		City:            req.City,
 		Fax:             req.Fax,
 		Status:          req.Status,
 		OrderPICName:    req.OrderPICName,
@@ -76,10 +79,17 @@ func (s *supplierService) Update(id uuid.UUID, updaterID *uuid.UUID, req Supplie
 	if req.Name != "" {
 		supplier.Name = req.Name
 	}
+	if req.NPWP != "" {
+		supplier.NPWP = req.NPWP
+	}
+	if req.Category != "" {
+		supplier.Category = req.Category
+	}
 	supplier.PICName = req.PICName
 	supplier.Phone = req.Phone
 	supplier.Email = req.Email
 	supplier.Address = req.Address
+	supplier.City = req.City
 	supplier.Fax = req.Fax
 	if req.Status != "" {
 		supplier.Status = req.Status

@@ -29,12 +29,7 @@ const ProfileInfo = () => {
   }, [session]);
 
   const handleLogout = async () => {
-    try {
-      authService.logout();
-      await signOut({ redirect: true, callbackUrl: "/auth/login" });
-    } catch (e) {
-      window.location.assign("/auth/login");
-    }
+    await authService.performFullLogout();
   };
 
   const displayName = currentUser?.name || session?.user?.name || "Administrator Sistem";

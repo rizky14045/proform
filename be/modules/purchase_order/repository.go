@@ -25,6 +25,10 @@ type PurchaseOrderRepository interface {
 	CreateBG(bg *BankGuarantee) error
 	UpdateBG(bg *BankGuarantee) error
 	DeleteBG(id uuid.UUID, deletedBy *uuid.UUID) error
+
+	// Checklist Supplier
+	FindAllChecklist(search string, page int, limit int) ([]ChecklistSupplier, int64, error)
+	CreateChecklist(cs *ChecklistSupplier) error
 }
 
 type purchaseOrderRepository struct {
@@ -151,3 +155,28 @@ func (r *purchaseOrderRepository) DeleteBG(id uuid.UUID, deletedBy *uuid.UUID) e
 	}
 	return r.db.Delete(&BankGuarantee{}, "id = ?", id).Error
 }
+
+func (r *purchaseOrderRepository) FindAllChecklist(search string, page int, limit int) ([]ChecklistSupplier, int64, error) {
+	var list []ChecklistSupplier
+	var total int64
+	query := r.db.Model(&ChecklistSupplier{}).Preload("Items")
+	if search != "" {
+		query = query.Where("form_number ILIKE ? OR po_number ILIKE ? OR company_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+	if err := query.Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+func (r *purchaseOrderRepository) CreateChecklist(cs *ChecklistSupplier) error {
+	return r.db.Create(cs).Error
+}
+

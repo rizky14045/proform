@@ -27,20 +27,36 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(strippedPath, request.url));
   }
 
-  // Fast-path authentication check via session cookies (synchronous, 0ms latency)
-  const hasTokenCookie = request.cookies
+  // Check explicit logout or error params to prevent loop
+  const isExplicitLogout =
+    request.nextUrl.searchParams.has("logout") ||
+    request.nextUrl.searchParams.has("force") ||
+    request.nextUrl.searchParams.has("error");
+
+  // Fast-path authentication check via NextAuth session cookies (synchronous, 0ms latency)
+  // NEVER use c.name.includes("token") as that matches "next-auth.csrf-token" which is always set!
+  const hasSessionToken = request.cookies
     .getAll()
-    .some(
-      (c) =>
-        c.name.includes("session-token") ||
-        c.name.includes("token") ||
-        c.name === "access_token"
-    );
+    .some((c) => {
+      const isSession =
+        c.name === "next-auth.session-token" ||
+        c.name === "__Secure-next-auth.session-token";
+      const val = (c.value || "").trim();
+      return isSession && val !== "" && val !== "undefined" && val !== "null";
+    });
 
-  let isAuthenticated = hasTokenCookie;
+  const hasAccessToken = request.cookies
+    .getAll()
+    .some((c) => {
+      const isAccess = c.name === "access_token";
+      const val = (c.value || "").trim();
+      return isAccess && val !== "" && val !== "undefined" && val !== "null";
+    });
 
-  // If no cookie was found, attempt NextAuth JWT token fallback
-  if (!isAuthenticated) {
+  let isAuthenticated = hasSessionToken;
+
+  // If no session cookie was found, attempt NextAuth JWT token verification
+  if (!isAuthenticated && !isExplicitLogout) {
     const secret =
       process.env.AUTH_SECRET ||
       process.env.NEXTAUTH_SECRET ||
@@ -51,6 +67,16 @@ export default async function proxy(request: NextRequest) {
     } catch (e) {
       // Fallback
     }
+  }
+
+  // Fallback to access_token only for protected pages if present
+  if (!isAuthenticated && hasAccessToken && !isExplicitLogout) {
+    isAuthenticated = true;
+  }
+
+  // If explicit logout on auth page, treat as unauthenticated
+  if (isExplicitLogout) {
+    isAuthenticated = false;
   }
 
   // Next.js RSC / prefetch requests: fast return if authenticated
@@ -74,10 +100,21 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 4. Auth pages: redirect to /dashboard if already logged in
+  // 4. Auth pages: redirect to /dashboard ONLY if genuine NextAuth session token is verified
   const isAuthPage = AUTH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  if (isAuthPage && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (isAuthPage) {
+    if (hasSessionToken && !isExplicitLogout) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    if (isExplicitLogout) {
+      // Clean up response cookies
+      const res = NextResponse.next();
+      res.cookies.delete("access_token");
+      res.cookies.delete("token");
+      res.cookies.delete("next-auth.session-token");
+      res.cookies.delete("__Secure-next-auth.session-token");
+      return res;
+    }
   }
 
   return NextResponse.next();

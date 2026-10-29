@@ -279,7 +279,7 @@ const DifferentTypeToast = () => {
       <Button
         variant="outline"
         onClick={() =>
-          toast.info("Be at the area 10 minutes before the event time")
+          toast("Be at the area 10 minutes before the event time")
         }
       >
         Info Toast
@@ -469,7 +469,7 @@ const RichColorToast = () => {
         color="info"
         variant="outline"
         onClick={() =>
-          stoast.info("Event has been created", {
+          stoast("Event has been created", {
             position: "top-center",
           })
         }

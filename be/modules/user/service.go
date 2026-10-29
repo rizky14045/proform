@@ -67,8 +67,14 @@ func (s *userService) Create(creatorID *uuid.UUID, req UserRequest) (*User, erro
 		userType = "USER"
 	}
 
+	nip := req.NIP
+	if nip == "" {
+		nip = req.NID
+	}
+
 	user := User{
 		NID:          req.NID,
+		NIP:          nip,
 		Name:         req.Name,
 		Email:        req.Email,
 		NIK:          req.NIK,
@@ -107,6 +113,9 @@ func (s *userService) Update(id uuid.UUID, updaterID *uuid.UUID, req UserUpdateR
 
 	if req.Name != "" {
 		user.Name = req.Name
+	}
+	if req.NIP != "" {
+		user.NIP = req.NIP
 	}
 	if req.NIK != "" {
 		user.NIK = req.NIK

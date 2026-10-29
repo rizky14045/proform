@@ -9,7 +9,7 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await getServerSession(authOptions as NextAuthOptions);
 
   if (!session?.user?.email) {
-    redirect("/auth/login");
+    redirect("/auth/login?force=true");
   }
 
   const trans = await getDictionary("en");

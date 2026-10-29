@@ -32,7 +32,13 @@ func (h *RoleHandler) Index(c *gin.Context) {
 }
 
 func (h *RoleHandler) Show(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
+	paramID := c.Param("id")
+	if paramID == "user-roles" {
+		h.IndexUserRoles(c)
+		return
+	}
+
+	id, err := uuid.Parse(paramID)
 	if err != nil {
 		helper.JsonResponse(c, false, "Invalid role ID", nil, err.Error(), http.StatusBadRequest)
 		return
@@ -132,3 +138,81 @@ func (h *RoleHandler) Destroy(c *gin.Context) {
 	}
 	helper.JsonResponse(c, true, "Role deleted successfully", nil, nil, http.StatusOK)
 }
+
+// UserRole Handlers
+func (h *RoleHandler) IndexUserRoles(c *gin.Context) {
+	search := c.Query("search")
+	page, limit, _ := helper.GetPaginationParams(c)
+
+	userRoles, total, err := h.service.FindUserRoles(search, page, limit)
+	if err != nil {
+		helper.JsonResponse(c, false, "Gagal mengambil data user role", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pagination := helper.BuildPagination(page, limit, total)
+	helper.JsonPaginatedResponse(c, true, "Data user role berhasil diambil", userRoles, pagination, nil, http.StatusOK)
+}
+
+func (h *RoleHandler) ShowUserRole(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		helper.JsonResponse(c, false, "ID user role tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ur, err := h.service.GetUserRoleByID(id)
+	if err != nil {
+		helper.JsonResponse(c, false, "Data user role tidak ditemukan", nil, err.Error(), http.StatusNotFound)
+		return
+	}
+	helper.JsonResponse(c, true, "Data user role berhasil diambil", ur, nil, http.StatusOK)
+}
+
+func (h *RoleHandler) CreateUserRole(c *gin.Context) {
+	var ur UserRole
+	if err := c.ShouldBindJSON(&ur); err != nil {
+		helper.JsonResponse(c, false, "Input tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CreateUserRole(&ur); err != nil {
+		helper.JsonResponse(c, false, "Gagal menyimpan user role", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "User role berhasil disimpan", ur, nil, http.StatusCreated)
+}
+
+func (h *RoleHandler) UpdateUserRole(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		helper.JsonResponse(c, false, "ID user role tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var ur UserRole
+	if err := c.ShouldBindJSON(&ur); err != nil {
+		helper.JsonResponse(c, false, "Input tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.UpdateUserRole(id, &ur); err != nil {
+		helper.JsonResponse(c, false, "Gagal memperbarui user role", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "User role berhasil diperbarui", ur, nil, http.StatusOK)
+}
+
+func (h *RoleHandler) DeleteUserRole(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		helper.JsonResponse(c, false, "ID user role tidak valid", nil, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.DeleteUserRole(id); err != nil {
+		helper.JsonResponse(c, false, "Gagal menghapus user role", nil, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	helper.JsonResponse(c, true, "User role berhasil dihapus", nil, nil, http.StatusOK)
+}
+

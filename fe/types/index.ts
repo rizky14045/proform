@@ -64,6 +64,7 @@ export interface Structure extends AuditFields {
 export interface User extends AuditFields {
   id: string;
   nid: string;
+  nip?: string;
   name: string;
   email: string;
   nik?: string;
@@ -90,6 +91,7 @@ export interface Supplier extends AuditFields {
   phone?: string;
   email?: string;
   address?: string;
+  city?: string;
   fax?: string;
   status: string;
   order_pic_name?: string;
@@ -166,15 +168,19 @@ export interface ProcurementRequest extends AuditFields {
   description?: string;
   creator_id: string;
   creator?: User;
+  user?: User; // alias
   structure_id: string;
   structure?: Structure;
   assigned_to_id?: string;
   assigned_to?: User;
   contract_type: "BARANG" | "JASA" | "KONSULTANSI" | "SEWA";
+  category?: string; // alias
   priority: "NORMAL" | "URGENT" | "EMERGENCY";
   rab_amount: number;
+  estimated_budget?: number; // alias
   current_step?: string;
   current_status: ProcurementStage;
+  status?: string; // alias
   is_distributed: boolean;
   notes?: string;
   items?: RequestItem[];
@@ -201,12 +207,21 @@ export interface ApprovalHistory {
 
 export interface ApprovalStructure extends AuditFields {
   id: string;
-  request_structure_id: string;
+  request_structure_id?: string;
   request_structure?: Structure;
-  approval_structure_id: string;
+  approval_structure_id?: string;
   approval_structure?: Structure;
-  menu: string;
-  approval_final: boolean;
+  menu?: string;
+  approval_final?: boolean;
+  module_code?: string;
+  step_order?: number;
+  role_id?: string;
+  role?: Role;
+  approver_user_id?: string;
+  approver_user?: User;
+  condition_min_amount?: number;
+  condition_max_amount?: number;
+  sla_hours?: number;
   status: string;
 }
 
@@ -217,7 +232,11 @@ export interface EngineeringEstimate extends AuditFields {
   request?: ProcurementRequest;
   procurement_request?: ProcurementRequest;
   hpe_number: string;
+  ee_number?: string;
   total_hpe: number;
+  total_estimate?: number;
+  total_estimated_cost?: number;
+  procurement_method?: string;
   tax_included: boolean;
   methodology?: string;
   data_sources?: string;
@@ -259,7 +278,9 @@ export interface OwnerEstimate extends AuditFields {
   procurement_request?: ProcurementRequest;
   oe_number: string;
   total_oe: number;
+  total_oe_amount?: number;
   market_survey_date?: string;
+  market_survey_method?: string;
   currency: string;
   status: string;
 }
@@ -268,10 +289,12 @@ export interface ProcurementTenderEvent extends AuditFields {
   id: string;
   request_id: string;
   request?: ProcurementRequest;
-  event_type: "AANWIJZING" | "BAPP_1" | "BAEP_1" | "BAPP_2" | "BAEP_2" | "BANH" | "BAHP";
+  event_type: "AANWIJZING" | "BAPP_1" | "BAEP_1" | "BAPP_2" | "BAEP_2" | "BANH" | "BAHP" | string;
   document_number: string;
   event_date: string;
+  location?: string;
   meeting_notes?: string;
+  minutes_of_meeting?: string;
   status: string;
   creator?: User;
   quotations?: TenderVendorQuotation[];
@@ -297,10 +320,13 @@ export interface PurchaseOrder extends AuditFields {
   request?: ProcurementRequest;
   supplier_id: string;
   supplier?: Supplier;
+  vendor?: Supplier;
+  items?: any[];
   po_number: string;
   contract_number?: string;
   title: string;
   po_amount: number;
+  contract_amount?: number;
   ppn_amount: number;
   total_amount: number;
   start_date: string;
@@ -314,17 +340,23 @@ export interface PurchaseOrder extends AuditFields {
 export interface BankGuarantee extends AuditFields {
   id: string;
   request_id?: string;
+  po_id?: string;
+  po?: PurchaseOrder;
   supplier_id: string;
   supplier?: Supplier;
-  guarantee_type: "PENAWARAN" | "PELAKSANAAN" | "PEMELIHARAAN";
-  serial_number: string;
+  guarantee_type?: "PENAWARAN" | "PELAKSANAAN" | "PEMELIHARAAN" | string;
+  bg_type?: string;
+  serial_number?: string;
+  bg_number?: string;
   issuing_bank: string;
   branch?: string;
   amount: number;
-  valid_from: string;
-  valid_until: string;
-  claim_deadline: string;
-  confirmation_status: "BELUM_DIKONFIRMASI" | "TERKONFIRMASI_VALID" | "TIDAK_TERDAFTAR";
+  valid_from?: string;
+  valid_until?: string;
+  effective_date?: string;
+  expiry_date?: string;
+  claim_deadline?: string;
+  confirmation_status: "BELUM_DIKONFIRMASI" | "TERKONFIRMASI_VALID" | "TIDAK_TERDAFTAR" | "VERIFIED_GENUINE" | "UNVERIFIED" | string;
   notes?: string;
 }
 
@@ -424,4 +456,309 @@ export interface BSREDigitalSignature extends AuditFields {
   error_message?: string;
   signed_at?: string;
 }
+
+// Master Data: Master Document (Bab 3.9)
+export interface MasterDocument extends AuditFields {
+  id: string;
+  doc_type: string; // LAMPIRAN_PPA | KELENGKAPAN_DOKUMEN
+  code: string;
+  name: string;
+  description?: string;
+  is_mandatory: boolean;
+  is_active: boolean;
+}
+
+// Master Data: Role Detail & User Role (Bab 3.2 & 3.3)
+export interface RoleDetail extends AuditFields {
+  id: string;
+  role_id: string;
+  role?: Role;
+  module_name: string;
+  can_create: boolean;
+  can_read: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  can_approve: boolean;
+}
+
+export interface UserRole extends AuditFields {
+  id: string;
+  user_id: string;
+  user?: User;
+  role_id: string;
+  role?: Role;
+  is_primary: boolean;
+}
+
+// Sub-Modul Users (Bab 4.6)
+export interface RequestDistribution extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  assigned_to_user_id: string;
+  assigned_to_user?: User;
+  distribution_date: string;
+  target_completion_date?: string;
+  status: string;
+  notes?: string;
+}
+
+export interface RequestAddendum extends AuditFields {
+  id: string;
+  original_request_id: string;
+  original_request?: ProcurementRequest;
+  addendum_number: string;
+  addendum_sequence: number;
+  reason: string;
+  scope_change_description?: string;
+  revised_estimated_budget: number;
+  status: string;
+  approved_by_id?: string;
+  approved_at?: string;
+}
+
+export interface TechnicalEvaluation extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  evaluator_id: string;
+  evaluator?: User;
+  evaluation_date: string;
+  score: number;
+  result: "MEMENUHI" | "TIDAK_MEMENUHI" | "MEMENUHI_BERSYARAT";
+  notes?: string;
+  status: string;
+}
+
+// Sub-Modul Inventory (Bab 4.7)
+export interface InventoryDistribution extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  planner_user_id: string;
+  planner_user?: User;
+  assigned_by_id: string;
+  assigned_by?: User;
+  distribution_date: string;
+  target_date?: string;
+  status: string;
+  notes?: string;
+}
+
+export interface PurchaseRequisitionRO extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  ro_number: string;
+  submission_date: string;
+  total_estimate: number;
+  status: string;
+  notes?: string;
+}
+
+export interface RKSAddendum extends AuditFields {
+  id: string;
+  rks_id: string;
+  rks?: RKSDocument;
+  addendum_number: string;
+  addendum_sequence: number;
+  reason: string;
+  clauses_modified?: string;
+  status: string;
+}
+
+export interface VFMReviewInventory extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  reviewer_id: string;
+  reviewer?: User;
+  review_date: string;
+  vfm_score: number;
+  recommendation: string;
+  status: string;
+}
+
+export interface DirectAppointmentPermit extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  permit_number: string;
+  vendor_id?: string;
+  vendor?: Supplier;
+  justification: string;
+  permit_date: string;
+  status: string;
+}
+
+// Sub-Modul Pengadaan (Bab 4.8)
+export interface ProcurementAssignment extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  buyer_user_id: string;
+  buyer_user?: User;
+  assigned_by_id: string;
+  assigned_by?: User;
+  assignment_date: string;
+  target_closing_date?: string;
+  status: string;
+  notes?: string;
+}
+
+export interface SPMK extends AuditFields {
+  id: string;
+  po_id?: string;
+  po?: PurchaseOrder;
+  spmk_number: string;
+  issue_date: string;
+  start_date: string;
+  completion_date: string;
+  vendor_id?: string;
+  vendor?: Supplier;
+  status: string;
+  work_description?: string;
+}
+
+export interface QuotationRequest extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  rfq_number: string;
+  issue_date: string;
+  closing_date: string;
+  method: string;
+  status: string;
+  notes?: string;
+}
+
+export interface ProcurementAnnouncement extends AuditFields {
+  id: string;
+  request_id: string;
+  request?: ProcurementRequest;
+  announcement_number: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  published_media?: string;
+  status: string;
+}
+
+export interface UmbrellaContract extends AuditFields {
+  id: string;
+  contract_number: string;
+  title: string;
+  vendor_id?: string;
+  vendor?: Supplier;
+  start_date: string;
+  end_date: string;
+  total_ceiling_amount: number;
+  remaining_amount: number;
+  status: string;
+}
+
+export interface POAddendum extends AuditFields {
+  id: string;
+  po_id: string;
+  po?: PurchaseOrder;
+  addendum_number: string;
+  addendum_sequence: number;
+  change_type: string;
+  description: string;
+  reason?: string;
+  revised_amount: number;
+  revised_delivery_date?: string;
+  status: string;
+}
+
+export interface PODeliveryOrder extends AuditFields {
+  id: string;
+  po_id: string;
+  po?: PurchaseOrder;
+  do_number: string;
+  delivery_date: string;
+  do_date?: string;
+  ordered_quantity?: number;
+  recipient_name?: string;
+  vehicle_number?: string;
+  shipping_notes?: string;
+  status: string;
+}
+
+export interface ChecklistSupplier extends AuditFields {
+  id: string;
+  supplier_id: string;
+  supplier?: Supplier;
+  po_id?: string;
+  po?: PurchaseOrder;
+  verified_by_id?: string;
+  verified_by?: User;
+  verification_date?: string;
+  status: string;
+  notes?: string;
+}
+
+// Sub-Modul Gudang (Bab 4.9)
+export interface WarehouseDistribution extends AuditFields {
+  id: string;
+  po_id: string;
+  po?: PurchaseOrder;
+  officer_user_id: string;
+  officer_user?: User;
+  distribution_date: string;
+  target_inspection_date?: string;
+  status: string;
+  notes?: string;
+}
+
+export interface GoodsReceiptInspection extends AuditFields {
+  id: string;
+  receipt_id: string;
+  receipt?: GoodsReceipt;
+  inspector_user_id: string;
+  inspector_user?: User;
+  inspection_date: string;
+  physical_condition: string;
+  quantity_passed: number;
+  quantity_rejected: number;
+  status: string;
+  notes?: string;
+}
+
+export interface JobCompletion extends AuditFields {
+  id: string;
+  po_id: string;
+  po?: PurchaseOrder;
+  completion_number: string;
+  completion_date: string;
+  progress_percentage: number;
+  reported_by_id?: string;
+  reported_by?: User;
+  status: string;
+  notes?: string;
+}
+
+// Report & Arsip (Bab 5)
+export interface RevisionLog extends AuditFields {
+  id: string;
+  module_name: string;
+  record_id: string;
+  revision_number: number;
+  reason: string;
+  changed_fields?: string;
+  revised_by_id?: string;
+  revised_by?: User;
+}
+
+export interface ArchiveDocument extends AuditFields {
+  id: string;
+  module_name: string;
+  document_number: string;
+  title: string;
+  document_date: string;
+  file_url: string;
+  category: string;
+  status: string;
+}
+
 

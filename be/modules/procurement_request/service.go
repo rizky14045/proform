@@ -18,6 +18,14 @@ type ProcurementRequestService interface {
 	Approve(id uuid.UUID, approverID uuid.UUID, approverRole string, notes string) (*ProcurementRequest, error)
 	Revise(id uuid.UUID, approverID uuid.UUID, approverRole string, notes string) (*ProcurementRequest, error)
 	Reject(id uuid.UUID, approverID uuid.UUID, approverRole string, notes string) (*ProcurementRequest, error)
+
+	// Sub-modules
+	FindDistributions(search string, page int, limit int) ([]RequestDistribution, int64, error)
+	CreateDistribution(dist *RequestDistribution) error
+	FindAddendums(search string, page int, limit int) ([]RequestAddendum, int64, error)
+	CreateAddendum(add *RequestAddendum) error
+	FindEvaluations(search string, page int, limit int) ([]TechnicalEvaluation, int64, error)
+	CreateEvaluation(eval *TechnicalEvaluation) error
 }
 
 type procurementRequestService struct {
@@ -311,4 +319,28 @@ func (s *procurementRequestService) Reject(id uuid.UUID, approverID uuid.UUID, a
 	})
 
 	return s.repo.GetByID(model.ID)
+}
+
+func (s *procurementRequestService) FindDistributions(search string, page int, limit int) ([]RequestDistribution, int64, error) {
+	return s.repo.FindDistributions(search, page, limit)
+}
+
+func (s *procurementRequestService) CreateDistribution(dist *RequestDistribution) error {
+	return s.repo.CreateDistribution(dist)
+}
+
+func (s *procurementRequestService) FindAddendums(search string, page int, limit int) ([]RequestAddendum, int64, error) {
+	return s.repo.FindAddendums(search, page, limit)
+}
+
+func (s *procurementRequestService) CreateAddendum(add *RequestAddendum) error {
+	return s.repo.CreateAddendum(add)
+}
+
+func (s *procurementRequestService) FindEvaluations(search string, page int, limit int) ([]TechnicalEvaluation, int64, error) {
+	return s.repo.FindEvaluations(search, page, limit)
+}
+
+func (s *procurementRequestService) CreateEvaluation(eval *TechnicalEvaluation) error {
+	return s.repo.CreateEvaluation(eval)
 }

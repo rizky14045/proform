@@ -7,9 +7,11 @@ import (
 	"template/modules/engineering_estimate"
 	"template/modules/executive_docket"
 	"template/modules/general"
+	"template/modules/master_document"
 	"template/modules/owner_estimate"
 	"template/modules/procurement_request"
 	"template/modules/purchase_order"
+	"template/modules/report"
 	"template/modules/role"
 	"template/modules/stock_code"
 	"template/modules/structure"
@@ -55,6 +57,10 @@ func Migrate(db *gorm.DB) error {
 	}
 	if err := stock_code.MigrateStockCode(db); err != nil {
 		log.Printf("[Migration Error] Gagal migrate StockCode: %v", err)
+		return err
+	}
+	if err := master_document.MigrateMasterDocument(db); err != nil {
+		log.Printf("[Migration Error] Gagal migrate MasterDocument: %v", err)
 		return err
 	}
 
@@ -107,6 +113,12 @@ func Migrate(db *gorm.DB) error {
 	// 10. Alih Tugas / Task Delegation
 	if err := task_delegation.MigrateTaskDelegation(db); err != nil {
 		log.Printf("[Migration Error] Gagal migrate TaskDelegation: %v", err)
+		return err
+	}
+
+	// 11. Reports & Archives
+	if err := report.MigrateReport(db); err != nil {
+		log.Printf("[Migration Error] Gagal migrate Report: %v", err)
 		return err
 	}
 

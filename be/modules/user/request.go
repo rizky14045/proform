@@ -4,6 +4,7 @@ import "github.com/google/uuid"
 
 type UserRequest struct {
 	NID          string     `json:"nid" binding:"required"`
+	NIP          string     `json:"nip"`
 	Name         string     `json:"name" binding:"required"`
 	Email        string     `json:"email" binding:"required,email"`
 	NIK          string     `json:"nik"`
@@ -19,6 +20,7 @@ type UserRequest struct {
 }
 
 type UserUpdateRequest struct {
+	NIP          string     `json:"nip"`
 	Name         string     `json:"name"`
 	Email        string     `json:"email"`
 	NIK          string     `json:"nik"`

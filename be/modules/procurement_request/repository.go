@@ -17,6 +17,14 @@ type ProcurementRequestRepository interface {
 	Delete(id uuid.UUID, deletedBy *uuid.UUID) error
 	GenerateRequestNumber() (string, error)
 	ReplaceItems(requestID uuid.UUID, items []RequestItem) error
+
+	// Sub-modules
+	FindDistributions(search string, page int, limit int) ([]RequestDistribution, int64, error)
+	CreateDistribution(dist *RequestDistribution) error
+	FindAddendums(search string, page int, limit int) ([]RequestAddendum, int64, error)
+	CreateAddendum(add *RequestAddendum) error
+	FindEvaluations(search string, page int, limit int) ([]TechnicalEvaluation, int64, error)
+	CreateEvaluation(eval *TechnicalEvaluation) error
 }
 
 type procurementRequestRepository struct {
@@ -128,3 +136,76 @@ func (r *procurementRequestRepository) ReplaceItems(requestID uuid.UUID, items [
 		return nil
 	})
 }
+
+func (r *procurementRequestRepository) FindDistributions(search string, page int, limit int) ([]RequestDistribution, int64, error) {
+	var list []RequestDistribution
+	var total int64
+	query := r.db.Model(&RequestDistribution{}).Preload("Request").Preload("DistributedTo")
+	if search != "" {
+		query = query.Where("form_number ILIKE ? OR notes ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+	if err := query.Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+func (r *procurementRequestRepository) CreateDistribution(dist *RequestDistribution) error {
+	return r.db.Create(dist).Error
+}
+
+func (r *procurementRequestRepository) FindAddendums(search string, page int, limit int) ([]RequestAddendum, int64, error) {
+	var list []RequestAddendum
+	var total int64
+	query := r.db.Model(&RequestAddendum{}).Preload("Items")
+	if search != "" {
+		query = query.Where("form_number ILIKE ? OR po_number ILIKE ? OR job_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+	if err := query.Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+func (r *procurementRequestRepository) CreateAddendum(add *RequestAddendum) error {
+	return r.db.Create(add).Error
+}
+
+func (r *procurementRequestRepository) FindEvaluations(search string, page int, limit int) ([]TechnicalEvaluation, int64, error) {
+	var list []TechnicalEvaluation
+	var total int64
+	query := r.db.Model(&TechnicalEvaluation{}).Preload("Details")
+	if search != "" {
+		query = query.Where("form_number ILIKE ? OR bapp_number ILIKE ? OR rfq_number ILIKE ? OR job_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * limit
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+	if err := query.Order("created_at desc").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+func (r *procurementRequestRepository) CreateEvaluation(eval *TechnicalEvaluation) error {
+	return r.db.Create(eval).Error
+}
+

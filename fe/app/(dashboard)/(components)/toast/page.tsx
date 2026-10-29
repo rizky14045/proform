@@ -385,7 +385,7 @@ const ToasterPage = () => {
               <Button
                 variant="outline"
                 onClick={() =>
-                  stoast.info("Be at the area 10 minutes before the event time")
+                  stoast("Be at the area 10 minutes before the event time")
                 }
               >
                 Info Toast
@@ -554,7 +554,7 @@ const ToasterPage = () => {
                 color="info"
                 variant="outline"
                 onClick={() =>
-                  stoast.info("Event has been created", {
+                  stoast("Event has been created", {
                     position: "top-center",
                   })
                 }

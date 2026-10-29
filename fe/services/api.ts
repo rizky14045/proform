@@ -11,6 +11,43 @@ export const apiClient: AxiosInstance = axios.create({
   timeout: 30000,
 });
 
+export function clearClientAuthSession() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_info");
+    sessionStorage.clear();
+
+    const cookies = [
+      "access_token",
+      "token",
+      "next-auth.session-token",
+      "__Secure-next-auth.session-token",
+      "next-auth.csrf-token",
+      "next-auth.callback-url",
+    ];
+
+    const domains = [
+      "",
+      window.location.hostname,
+      `.${window.location.hostname}`,
+      "localhost",
+      "127.0.0.1",
+    ];
+
+    cookies.forEach((c) => {
+      domains.forEach((d) => {
+        const domainStr = d ? `; domain=${d}` : "";
+        document.cookie = `${c}=; path=/${domainStr}; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        document.cookie = `${c}=; path=${domainStr}; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      });
+    });
+  } catch (e) {
+    console.error("Failed to clear auth session:", e);
+  }
+}
+
 // Request Interceptor: Attach JWT Token and Idempotency Key for mutating requests
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -23,8 +60,15 @@ apiClient.interceptors.request.use(
         }
       }
 
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Ensure valid non-empty token string
+      if (
+        token &&
+        token !== "undefined" &&
+        token !== "null" &&
+        token.trim() !== "" &&
+        config.headers
+      ) {
+        config.headers.Authorization = `Bearer ${token.trim()}`;
       }
 
       // Add Idempotency key for POST / PUT / PATCH
@@ -41,6 +85,8 @@ apiClient.interceptors.request.use(
   }
 );
 
+let isRedirectingToLogin = false;
+
 // Response Interceptor: Error handling
 apiClient.interceptors.response.use(
   (response) => response.data,
@@ -49,9 +95,13 @@ apiClient.interceptors.response.use(
       // Do not clear on login attempt failure
       const isLoginUrl = error.config?.url?.includes("/auth/login");
       if (!isLoginUrl) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("token");
-        localStorage.removeItem("user_info");
+        clearClientAuthSession();
+
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith("/auth/login") && !isRedirectingToLogin) {
+          isRedirectingToLogin = true;
+          window.location.href = `/auth/login?error=session_expired&callbackUrl=${encodeURIComponent(currentPath)}`;
+        }
       }
     }
     const message = error.response?.data?.message || error.message || "An unexpected error occurred";
@@ -60,4 +110,5 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
 

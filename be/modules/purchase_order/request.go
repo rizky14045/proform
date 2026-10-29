@@ -11,7 +11,12 @@ type PurchaseOrderRequest struct {
 	SupplierID       uuid.UUID  `json:"supplier_id" binding:"required"`
 	PONumber         string     `json:"po_number"`
 	PODate           time.Time  `json:"po_date" binding:"required"`
+	POAmount         float64    `json:"po_amount"`
+	PPNAmount        float64    `json:"ppn_amount"`
+	ContractAmount   float64    `json:"contract_amount"`
 	TotalAmount      float64    `json:"total_amount" binding:"required"`
+	DeliveryLocation string     `json:"delivery_location"`
+	PaymentTerms     string     `json:"payment_terms"`
 	DeliveryDeadline time.Time  `json:"delivery_deadline" binding:"required"`
 	ContractType     string     `json:"contract_type"`
 	IsAddendum       bool       `json:"is_addendum"`

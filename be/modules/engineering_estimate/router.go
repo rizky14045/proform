@@ -22,15 +22,8 @@ func SetupRoutes(router *gin.RouterGroup, db *gorm.DB) {
 
 	register := func(app *gin.RouterGroup) {
 		app.Use(middleware.JWTMiddleware())
-		// Base HPE endpoints
-		app.GET("", handler.IndexHPE)
-		app.GET("/", handler.IndexHPE)
-		app.GET("/:id", handler.ShowHPE)
-		app.POST("", handler.CreateHPE)
-		app.POST("/", handler.CreateHPE)
-		app.DELETE("/:id", handler.DestroyHPE)
 
-		// HPE
+		// Static sub-module endpoints FIRST
 		app.GET("/hpe", handler.IndexHPE)
 		app.GET("/hpe/:id", handler.ShowHPE)
 		app.POST("/hpe/create", handler.CreateHPE)
@@ -39,15 +32,35 @@ func SetupRoutes(router *gin.RouterGroup, db *gorm.DB) {
 		app.POST("/hpe/submit/:id", handler.SubmitHPE)
 		app.POST("/hpe/approve/:id", handler.ApproveHPE)
 
-		// RKS
 		app.GET("/rks", handler.IndexRKS)
 		app.POST("/rks", handler.CreateRKS)
 		app.POST("/rks/create", handler.CreateRKS)
 
-		// VFM
 		app.GET("/vfm", handler.IndexVFM)
 		app.POST("/vfm", handler.CreateVFM)
 		app.POST("/vfm/create", handler.CreateVFM)
+
+		// Sub-modul Inventory aliases
+		app.GET("/distributions", handler.IndexHPE)
+		app.POST("/distributions", handler.CreateHPE)
+		app.GET("/ros", handler.IndexHPE)
+		app.POST("/ros", handler.CreateHPE)
+		app.GET("/rks-addendums", handler.IndexRKS)
+		app.POST("/rks-addendums", handler.CreateRKS)
+		app.GET("/vfm-reviews", handler.IndexVFM)
+		app.POST("/vfm-reviews", handler.CreateVFM)
+		app.GET("/direct-permits", handler.IndexHPE)
+		app.POST("/direct-permits", handler.CreateHPE)
+
+		// Base root endpoints
+		app.GET("", handler.IndexHPE)
+		app.GET("/", handler.IndexHPE)
+		app.POST("", handler.CreateHPE)
+		app.POST("/", handler.CreateHPE)
+
+		// Wildcards LAST
+		app.GET("/:id", handler.ShowHPE)
+		app.DELETE("/:id", handler.DestroyHPE)
 	}
 
 	register(router.Group("/engineering-estimate"))

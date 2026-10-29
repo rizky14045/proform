@@ -24,9 +24,10 @@ export interface MenuItemProps {
   isHeader?: boolean;
 }
 
-// Master Menu INTERLOGS UP Sembalang (Diselaraskan dengan User Manual PT PLN Nusantara Power)
-// Semua menu dibuat flat (langsung link) tanpa child accordion
+// Master Menu INTERLOGS UP Sembalang (Diselaraskan 100% dengan User Manual INTERLOGS V6)
+// Semua menu dibuat flat (langsung link) tanpa accordion berjenjang demi kecepatan dan kenyamanan navigasi
 export const interlogsMenus: MenuItemProps[] = [
+  // ================= 1. MENU UTAMA =================
   {
     isHeader: true,
     title: "MENU UTAMA",
@@ -38,174 +39,409 @@ export const interlogsMenus: MenuItemProps[] = [
     href: "/dashboard",
     roles: ["ALL"],
   },
+  {
+    title: "Approval Dokumen",
+    icon: ClipBoard2,
+    href: "/approval",
+    roles: ["ALL"],
+  },
 
-  // 1. UNIT PEMINTA (USER) & PERENCANAAN
+  // ================= 2. MASTER DATA (BAB 3) =================
   {
     isHeader: true,
-    title: "PERENCANAAN & USULAN",
-    roles: ["ADMIN", "GM", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK", "SPV_INVENTORY", "STAFF_INVENTORY"],
+    title: "MASTER DATA SISTEM",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Master Pengguna (User)",
+    icon: ListFill,
+    href: "/master/users",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Kode Jabatan (Role)",
+    icon: Sheild,
+    href: "/master/roles",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Akses Spesial (User Role)",
+    icon: Sheild,
+    href: "/master/user-roles",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Parameter Umum",
+    icon: Note,
+    href: "/master/generals",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Struktur Organisasi",
+    icon: Building,
+    href: "/master/structures",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Struktur Approval",
+    icon: ClipBoard,
+    href: "/master/approval-structures",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+  {
+    title: "Master Rekanan (Supplier)",
+    icon: Building2,
+    href: "/master/suppliers",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Master Stock Code",
+    icon: Cart,
+    href: "/master/stock-codes",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_INVENTORY", "STAFF_INVENTORY", "SPV_GUDANG"],
+  },
+  {
+    title: "Master Dokumen",
+    icon: Files,
+    href: "/master/documents",
+    roles: ["ADMIN", "SUPERADMIN"],
+  },
+
+  // ================= 3. TRANSAKSI UMUM (BAB 4) =================
+  {
+    isHeader: true,
+    title: "TRANSAKSI UMUM",
+    roles: ["ALL"],
+  },
+  {
+    title: "Alih Tugas Sementara",
+    icon: ListFill,
+    href: "/transactions/alih-tugas",
+    roles: ["ALL"],
+  },
+  {
+    title: "Kelola Bank Garansi",
+    icon: Building2,
+    href: "/transactions/bank-garansi",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_KEUANGAN", "SPV_KEUANGAN", "SPV_PENGADAAN"],
+  },
+  {
+    title: "Penilaian Kinerja Supplier",
+    icon: ClipBoard,
+    href: "/procurement/evaluasi",
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_USER", "SPV_USER", "SPV_GUDANG", "SPV_PENGADAAN", "MGR_LOGISTIK"],
+  },
+  {
+    title: "Checklist Dokumen Supplier",
+    icon: Note2,
+    href: "/transactions/checklist-supplier",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Tracking Pengadaan",
+    icon: Graph,
+    href: "/tracking",
+    roles: ["ALL"],
+  },
+
+  // ================= 4. TRANSAKSI USERS (BAB 4.6) =================
+  {
+    isHeader: true,
+    title: "TRANSAKSI USER (UNIT PEMINTA)",
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK"],
   },
   {
     title: "Usulan Pengadaan (UPM)",
     icon: Files,
     href: "/procurement",
-    roles: ["ADMIN", "GM", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK", "SPV_INVENTORY", "STAFF_INVENTORY"],
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK"],
+  },
+  {
+    title: "Distribusi Permintaan User",
+    icon: ListFill,
+    href: "/transactions/users/distribusi-permintaan",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_USER", "SPV_USER"],
+  },
+  {
+    title: "Usulan Permintaan Tahap 2",
+    icon: Note,
+    href: "/transactions/users/usulan-permintaan-2",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_USER", "SPV_USER", "STAFF_USER"],
+  },
+  {
+    title: "Usulan Addendum User",
+    icon: ClipBoard2,
+    href: "/transactions/users/usulan-permintaan-addendum",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_USER", "SPV_USER", "STAFF_USER"],
+  },
+  {
+    title: "Evaluasi Teknis Penawaran",
+    icon: Note3,
+    href: "/transactions/users/evaluasi-teknis",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_USER", "SPV_USER", "STAFF_USER"],
   },
 
-  // 2. ENJINIRING ESTIMATE (HPE & RKS)
+  // ================= 5. TRANSAKSI INVENTORY (BAB 4.7) =================
   {
     isHeader: true,
-    title: "ENJINIRING & RKS",
-    roles: ["ADMIN", "GM", "MGR_LOGISTIK", "SPV_INVENTORY", "STAFF_INVENTORY"],
+    title: "TRANSAKSI INVENTORY & PERENCANAAN",
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "SPV_INVENTORY", "STAFF_INVENTORY"],
+  },
+  {
+    title: "Distribusi Perencana",
+    icon: ListFill,
+    href: "/transactions/inventory/distribusi-perencana",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_LOGISTIK", "SPV_INVENTORY"],
+  },
+  {
+    title: "Usulan Pengadaan (RO)",
+    icon: Cart,
+    href: "/transactions/inventory/usulan-pengadaan",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_INVENTORY", "STAFF_INVENTORY"],
   },
   {
     title: "HPE & Dokumen RKS",
     icon: Note,
     href: "/procurement/hpe-rks",
-    roles: ["ADMIN", "GM", "MGR_LOGISTIK", "SPV_INVENTORY", "STAFF_INVENTORY"],
+    roles: ["ADMIN", "SUPERADMIN", "MGR_LOGISTIK", "SPV_INVENTORY", "STAFF_INVENTORY"],
+  },
+  {
+    title: "Kelola Dokumen RKS",
+    icon: Files,
+    href: "/transactions/inventory/rks",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_INVENTORY", "STAFF_INVENTORY"],
+  },
+  {
+    title: "Adendum Dokumen RKS",
+    icon: Note2,
+    href: "/transactions/inventory/adendum-rks",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_INVENTORY", "STAFF_INVENTORY"],
+  },
+  {
+    title: "Review VFM Perencanaan",
+    icon: Graph,
+    href: "/transactions/inventory/review-vfm",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_LOGISTIK", "SPV_INVENTORY"],
+  },
+  {
+    title: "Izin Penunjukan Langsung",
+    icon: Sheild,
+    href: "/transactions/inventory/izin-penunjukan-langsung",
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "SPV_INVENTORY"],
   },
 
-  // 3. PROSES PENGADAAN (SOURCING & TENDER)
+  // ================= 6. TRANSAKSI PENGADAAN (BAB 4.8) =================
   {
     isHeader: true,
-    title: "PENGADAAN & TENDER",
-    roles: ["ADMIN", "GM", "SPV_PENGADAAN", "STAFF_PENGADAAN", "MGR_LOGISTIK", "MGR_KEUANGAN", "SPV_KEUANGAN"],
+    title: "TRANSAKSI PENGADAAN & KONTRAK",
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "SPV_PENGADAAN", "STAFF_PENGADAAN", "MGR_KEUANGAN"],
   },
   {
-    title: "Proses Tender & Sourcing",
+    title: "Distribusi Pengadaan Pelaksana",
+    icon: ListFill,
+    href: "/transactions/pengadaan/distribusi-pengadaan",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_LOGISTIK", "SPV_PENGADAAN"],
+  },
+  {
+    title: "SP Mulai Kerja (SPMK)",
+    icon: ClipBoard2,
+    href: "/transactions/pengadaan/spmk",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Penyusunan HPS (OE)",
+    icon: Note,
+    href: "/transactions/pengadaan/hps",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Permintaan Penawaran (RFQ)",
+    icon: Files,
+    href: "/transactions/pengadaan/permintaan-penawaran",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Pengumuman Pengadaan",
+    icon: Monitor,
+    href: "/transactions/pengadaan/pengumuman-penawaran",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Aanwijzing (Penjelasan)",
+    icon: ClipBoard,
+    href: "/transactions/pengadaan/aanwijzing",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Pembukaan & Evaluasi Penawaran",
     icon: Cart,
     href: "/procurement/tender",
-    roles: ["ADMIN", "GM", "SPV_PENGADAAN", "STAFF_PENGADAAN", "MGR_LOGISTIK", "MGR_KEUANGAN", "SPV_KEUANGAN"],
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
   },
-
-  // 4. KONTRAK & PURCHASE ORDER
   {
-    isHeader: true,
-    title: "KONTRAK & PO",
-    roles: ["ADMIN", "GM", "SPV_PENGADAAN", "STAFF_PENGADAAN", "MGR_LOGISTIK", "SPV_GUDANG", "STAFF_GUDANG", "MGR_KEUANGAN"],
+    title: "Pembukaan Penawaran 1 Sampul",
+    icon: Files,
+    href: "/transactions/pengadaan/pembukaan-penawaran-1",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Evaluasi Penawaran 1 Sampul",
+    icon: Note2,
+    href: "/transactions/pengadaan/evaluasi-penawaran-1",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Pembukaan Penawaran 2 Sampul",
+    icon: Files,
+    href: "/transactions/pengadaan/pembukaan-penawaran-2",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Evaluasi Penawaran 2 Sampul",
+    icon: Note2,
+    href: "/transactions/pengadaan/evaluasi-penawaran-2",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "BA Negosiasi Harga (BANH)",
+    icon: Graph,
+    href: "/transactions/pengadaan/negosiasi-harga",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "BA Hasil Pengadaan (BAHP)",
+    icon: ClipBoard2,
+    href: "/transactions/pengadaan/hasil-pengadaan",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Review VFM Pengadaan",
+    icon: Graph,
+    href: "/transactions/pengadaan/review-vfm",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_LOGISTIK", "SPV_PENGADAAN"],
+  },
+  {
+    title: "Kontrak Payung (Umbrella)",
+    icon: Building2,
+    href: "/transactions/pengadaan/kontrak-payung",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_LOGISTIK", "SPV_PENGADAAN"],
   },
   {
     title: "Purchase Order (PO)",
     icon: Building2,
     href: "/procurement/po",
-    roles: ["ADMIN", "GM", "SPV_PENGADAAN", "STAFF_PENGADAAN", "MGR_LOGISTIK", "SPV_GUDANG", "STAFF_GUDANG", "MGR_KEUANGAN"],
+    roles: ["ADMIN", "SUPERADMIN", "GM", "SPV_PENGADAAN", "STAFF_PENGADAAN", "MGR_LOGISTIK"],
+  },
+  {
+    title: "Addendum Kontrak PO",
+    icon: Note3,
+    href: "/transactions/pengadaan/addendum-po",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
+  },
+  {
+    title: "Delivery Order (PO DO)",
+    icon: Cart,
+    href: "/transactions/pengadaan/po-do",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN", "SPV_GUDANG"],
   },
 
-  // 5. GUDANG & PENERIMAAN MATERIAL / JASA
+  // ================= 7. TRANSAKSI GUDANG (BAB 4.9) =================
   {
     isHeader: true,
-    title: "GUDANG & PENERIMAAN",
-    roles: ["ADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK"],
+    title: "TRANSAKSI GUDANG & MATERIAL",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_USER", "SPV_USER", "MGR_LOGISTIK"],
   },
   {
-    title: "Logistik Gudang & BAST",
-    icon: Building,
-    href: "/warehouse",
-    roles: ["ADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK"],
-    child: [
-      {
-        title: "Penerimaan Barang (GR)",
-        href: "/warehouse/receipts",
-        icon: Cart,
-        roles: ["ADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_LOGISTIK"],
-      },
-      {
-        title: "Berita Acara (BAPHB / BAST)",
-        href: "/warehouse/acts",
-        icon: Files,
-        roles: ["ADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_USER", "SPV_USER", "STAFF_USER", "MGR_LOGISTIK"],
-      },
-    ],
-  },
-
-  // 6. EVALUASI KINERJA REKANAN
-  {
-    isHeader: true,
-    title: "EVALUASI VENDOR",
-    roles: ["ADMIN", "GM", "MGR_USER", "SPV_USER", "SPV_GUDANG", "SPV_PENGADAAN", "MGR_LOGISTIK"],
-  },
-  {
-    title: "Evaluasi Rekanan",
+    title: "Distribusi Penerimaan Gudang",
     icon: ListFill,
-    href: "/procurement/evaluasi",
-    roles: ["ADMIN", "GM", "MGR_USER", "SPV_USER", "SPV_GUDANG", "SPV_PENGADAAN", "MGR_LOGISTIK"],
+    href: "/transactions/gudang/distribusi-penerimaan",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_GUDANG", "STAFF_GUDANG"],
+  },
+  {
+    title: "Pemeriksaan Fisik Barang",
+    icon: Note2,
+    href: "/transactions/gudang/pemeriksaan-penerimaan",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_GUDANG", "STAFF_GUDANG"],
+  },
+  {
+    title: "BA Pemeriksaan Hasil Barang (BAPHB)",
+    icon: Files,
+    href: "/transactions/gudang/pemeriksaan-barang",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_USER", "SPV_USER"],
+  },
+  {
+    title: "Penerimaan Barang (Goods Receipt)",
+    icon: Cart,
+    href: "/warehouse/receipts",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_LOGISTIK"],
+  },
+  {
+    title: "Penyelesaian Pekerjaan Jasa",
+    icon: ClipBoard2,
+    href: "/transactions/gudang/penyelesaian-pekerjaan",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_USER", "SPV_USER", "STAFF_USER"],
+  },
+  {
+    title: "Berita Acara Serah Terima (BAST)",
+    icon: Files,
+    href: "/warehouse/acts",
+    roles: ["ADMIN", "SUPERADMIN", "SPV_GUDANG", "STAFF_GUDANG", "MGR_USER", "SPV_USER", "MGR_LOGISTIK"],
   },
 
-  // 7. EXECUTIVE DOCKET & TTE BSRE (BSSN)
+  // ================= 8. LAPORAN & MONITORING (BAB 5) =================
   {
     isHeader: true,
-    title: "PENGESAHAN EKSEKUTIF",
-    roles: ["ADMIN", "GM", "MGR_LOGISTIK", "MGR_USER", "MGR_KEUANGAN"],
+    title: "LAPORAN & MONITORING",
+    roles: ["ALL"],
+  },
+  {
+    title: "Monitoring Pengadaan",
+    icon: Graph,
+    href: "/report/monitoring",
+    roles: ["ALL"],
+  },
+  {
+    title: "Laporan Revisi Dokumen",
+    icon: Note,
+    href: "/report/laporan-revisi",
+    roles: ["ALL"],
+  },
+  {
+    title: "Laporan Bank Garansi",
+    icon: Building2,
+    href: "/report/report-bank-garansi",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_KEUANGAN", "SPV_KEUANGAN", "MGR_LOGISTIK"],
+  },
+  {
+    title: "Monitoring Masa Berlaku BG",
+    icon: ClipBoard,
+    href: "/report/monitoring-bank-garansi",
+    roles: ["ADMIN", "SUPERADMIN", "MGR_KEUANGAN", "SPV_KEUANGAN", "MGR_LOGISTIK"],
+  },
+  {
+    title: "Arsip Dokumen Digital",
+    icon: Files,
+    href: "/report/arsip",
+    roles: ["ALL"],
+  },
+
+  // ================= 9. EKSEKUTIF & AUDIT =================
+  {
+    isHeader: true,
+    title: "PENGESAHAN & AUDIT",
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "MGR_USER", "MGR_KEUANGAN"],
   },
   {
     title: "Executive Docket & TTE",
     icon: Sheild,
     href: "/executive-docket",
-    roles: ["ADMIN", "GM", "MGR_LOGISTIK", "MGR_USER", "MGR_KEUANGAN"],
-  },
-
-  // 8. MASTER DATA SISTEM
-  {
-    isHeader: true,
-    title: "PENGATURAN & MASTER DATA",
-    roles: ["ADMIN", "SPV_INVENTORY", "STAFF_INVENTORY", "SPV_PENGADAAN", "SPV_GUDANG"],
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "MGR_USER", "MGR_KEUANGAN"],
   },
   {
-    title: "Master Data Sistem",
-    icon: Monitor,
-    href: "/master",
-    roles: ["ADMIN", "SPV_INVENTORY", "STAFF_INVENTORY", "SPV_PENGADAAN", "SPV_GUDANG"],
-    child: [
-      {
-        title: "Kelola Pengguna",
-        href: "/master/users",
-        icon: ListFill,
-        roles: ["ADMIN"],
-      },
-      {
-        title: "Kode Jabatan (Roles)",
-        href: "/master/roles",
-        icon: Sheild,
-        roles: ["ADMIN"],
-      },
-      {
-        title: "Master Rekanan (Suppliers)",
-        href: "/master/suppliers",
-        icon: Building2,
-        roles: ["ADMIN", "SPV_PENGADAAN", "STAFF_PENGADAAN"],
-      },
-      {
-        title: "Master Stock Code",
-        href: "/master/stock-codes",
-        icon: Cart,
-        roles: ["ADMIN", "SPV_INVENTORY", "STAFF_INVENTORY", "SPV_GUDANG", "STAFF_GUDANG"],
-      },
-      {
-        title: "Parameter Umum",
-        href: "/master/generals",
-        icon: Note,
-        roles: ["ADMIN"],
-      },
-    ],
-  },
-
-  // 9. AUDIT & TRACKING
-  {
-    isHeader: true,
-    title: "AUDIT & PELACAKAN",
-    roles: ["ALL"],
-  },
-  {
-    title: "Tracking Permohonan",
-    icon: Graph,
-    href: "/tracking",
-    roles: ["ALL"],
-  },
-  {
-    title: "Audit Logs Sistem",
+    title: "Audit Trail Sistem",
     icon: ClipBoard,
     href: "/audit/logs",
-    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "MGR_KEUANGAN", "MGR_USER"],
+    roles: ["ADMIN", "SUPERADMIN", "GM", "MGR_LOGISTIK", "MGR_KEUANGAN"],
   },
 ];
 
