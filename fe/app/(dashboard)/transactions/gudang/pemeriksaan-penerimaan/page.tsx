@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { gudangSubmoduleService, poService, masterService } from "@/services/modules.service";
 import { GoodsReceiptInspection, PurchaseOrder, User } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface RequirementDoc {
@@ -172,15 +174,13 @@ export default function PemeriksaanPenerimaanBarangPage() {
     toast.success(`PO ${p.po_number} dipilih`);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("Ukuran berkas melebihi batas 25 MB");
-      return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, uploaded_file_name: res.fileName }));
     }
-    setForm((prev) => ({ ...prev, uploaded_file_name: file.name }));
-    toast.success(`File ${file.name} berhasil diunggah`);
   };
 
   const toggleRequirement = (id: string) => {
@@ -198,8 +198,13 @@ export default function PemeriksaanPenerimaanBarangPage() {
   const totalQtyReceived = items.reduce((acc, curr) => acc + (Number(curr.qty_received) || 0), 0);
 
   const handleSubmit = async (actionType: "DRAFT" | "POSTED") => {
-    if (!form.po_id) {
-      toast.error("Rujukan Purchase Order wajib dipilih");
+    const validation = validateForm([
+      { field: "po_id", label: "Rujukan Purchase Order", value: form.po_id, required: true },
+      { field: "inspection_date", label: "Tanggal Form Pemeriksaan", value: form.inspection_date, required: true, type: "date" },
+      { field: "package_box_count", label: "Jumlah Dos/Koli Packing", value: form.package_box_count, required: true, type: "number", min: 1 },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);

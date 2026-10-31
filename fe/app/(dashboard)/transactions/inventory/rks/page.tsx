@@ -16,6 +16,8 @@ import {
 import { Files, Search, Plus, FileText, Upload, Send, ShieldCheck, CheckSquare, Layers } from "lucide-react";
 import { hpeService } from "@/services/modules.service";
 import { EngineeringEstimate } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function KelolaRKSPage() {
@@ -93,9 +95,23 @@ export default function KelolaRKSPage() {
     await saveRKS(true);
   };
 
+  const handleRKSFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedRKSFile(res.fileName);
+    }
+  };
+
   const saveRKS = async (isSendApproval: boolean) => {
-    if (!form.hpe_id || !form.title) {
-      toast.error("Pilih dokumen referensi HPE dan isi judul pengadaan");
+    const validation = validateForm([
+      { field: "hpe_id", label: "Dokumen Referensi HPE", value: form.hpe_id, required: true },
+      { field: "title", label: "Judul Pengadaan / Judul RKS", value: form.title, required: true, minLength: 5 },
+      { field: "general_terms", label: "Syarat Umum Pengadaan", value: form.general_terms, required: true, minLength: 5 },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -278,17 +294,18 @@ export default function KelolaRKSPage() {
                     <input
                       type="file"
                       accept=".pdf,.docx,.doc"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedRKSFile(e.target.files[0].name);
-                          toast.success(`File RKS ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      onChange={handleRKSFileUpload}
                       className="hidden"
                     />
                   </label>
                   <span className="text-xs text-muted-foreground font-mono">
-                    {uploadedRKSFile || "Belum ada berkas RKS diunggah"}
+                    {uploadedRKSFile ? (
+                      <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                        <CheckSquare className="w-3.5 h-3.5" /> Terverifikasi: {uploadedRKSFile}
+                      </span>
+                    ) : (
+                      "Belum ada berkas RKS diunggah (Maks. 25MB)"
+                    )}
                   </span>
                 </div>
               </div>

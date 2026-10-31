@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, oeService } from "@/services/modules.service";
 import { ProcurementAnnouncement, OwnerEstimate } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function PengumumanPengadaanPage() {
@@ -120,18 +122,33 @@ export default function PengumumanPengadaanPage() {
     toast.success(`HPS ${oe.oe_number} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih file dokumen pengumuman terlebih dahulu!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen Pengumuman Pengadaan berhasil diunggah!");
   };
 
   const handleSubmit = async (actionType: "SAVE" | "POST") => {
-    if (!form.request_id || !form.title) {
-      toast.error("Silakan lengkapi dokumen HPS dan nama pekerjaan bertanda (*)");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Dokumen HPS", value: form.request_id, required: true },
+      { field: "announcement_number", label: "Nomor Pengumuman", value: form.announcement_number, required: true, minLength: 3 },
+      { field: "title", label: "Judul Pengumuman Pengadaan", value: form.title, required: true, minLength: 5 },
+      { field: "announcement_start_date", label: "Tanggal Mulai Tayang", value: form.announcement_start_date, required: true, type: "date" },
+      { field: "announcement_end_date", label: "Tanggal Akhir Tayang", value: form.announcement_end_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -445,16 +462,8 @@ export default function PengumumanPengadaanPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

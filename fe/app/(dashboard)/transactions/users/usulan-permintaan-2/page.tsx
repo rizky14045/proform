@@ -15,6 +15,8 @@ import {
 import { FileText, Search, Plus, Trash2, Send, Upload, Layers, Coins, Calendar, CheckCircle2 } from "lucide-react";
 import { procurementService } from "@/services/procurement.service";
 import { ProcurementRequest, RequestItem } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function UsulanPermintaan2Page() {
@@ -142,9 +144,28 @@ export default function UsulanPermintaan2Page() {
     await saveRequest(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedFile(res.fileName);
+    }
+  };
+
   const saveRequest = async (sendApproval: boolean) => {
-    if (!form.wo_number || !form.prk_number || items.length === 0) {
-      toast.error("Nomor WO, PRK, dan minimal 1 rincian item wajib diisi");
+    const validation = validateForm([
+      { field: "wo_number", label: "Nomor Work Order (WO)", value: form.wo_number, required: true, minLength: 3 },
+      { field: "prk_number", label: "Nomor Anggaran PRK", value: form.prk_number, required: true, minLength: 3 },
+      { field: "description", label: "Uraian Pekerjaan / Keterangan", value: form.description, required: true, minLength: 5 },
+      { field: "form_date", label: "Tanggal Usulan", value: form.form_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Minimal harus ada 1 rincian item barang/jasa");
       return;
     }
     setIsSubmitting(true);
@@ -425,12 +446,8 @@ export default function UsulanPermintaan2Page() {
                       [Pilih Dokumen]
                       <input
                         type="file"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            setUploadedFile(e.target.files[0].name);
-                            toast.success(`File ${e.target.files[0].name} siap diunggah`);
-                          }
-                        }}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={handleFileUpload}
                         className="hidden"
                       />
                     </label>

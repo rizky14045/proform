@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, poService } from "@/services/modules.service";
 import { PODeliveryOrder, PurchaseOrder, UmbrellaContract } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface PODOItem {
@@ -150,13 +152,21 @@ export default function PODOPage() {
     toast.success(`Kontrak Payung ${c.contract_number} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih berkas dokumen PO Delivery Order!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen PO DO berhasil diunggah!");
   };
 
   const handleAddItem = () => {
@@ -201,8 +211,17 @@ export default function PODOPage() {
   };
 
   const handleSubmit = async (actionType: "SAVE" | "SEND_FOR_APPROVAL") => {
-    if (!form.contract_id || items.length === 0) {
-      toast.error("Silakan pilih Kontrak Payung asal dan minimal 1 item call-off (*)");
+    const validation = validateForm([
+      { field: "contract_id", label: "Pilihan Kontrak Payung Asal", value: form.contract_id, required: true },
+      { field: "do_number", label: "Nomor Purchase Order DO", value: form.do_number, required: true, minLength: 3 },
+      { field: "do_date", label: "Tanggal Form PO DO", value: form.do_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Minimal harus ada 1 item call-off");
       return;
     }
     setIsSubmitting(true);
@@ -459,16 +478,8 @@ export default function PODOPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

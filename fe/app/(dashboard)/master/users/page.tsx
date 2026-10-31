@@ -27,6 +27,8 @@ import { masterService } from "@/services/modules.service";
 import { User, Role, PaginationMeta, Structure } from "@/types";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { DataTablePagination } from "@/components/data-table-pagination";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 const USER_TYPE_OPTIONS = [
@@ -175,8 +177,43 @@ export default function MasterUsersPage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileUrl) {
+      setForm((prev) => ({ ...prev, user_image: res.fileUrl }));
+      setImageFileName(file.name);
+    }
+  };
+
+  const handleSignUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileUrl) {
+      setForm((prev) => ({ ...prev, user_sign: res.fileUrl }));
+      setSignFileName(file.name);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = validateForm([
+      { field: "nid", label: "Nomor Induk Diri (NID)", value: form.nid, required: true, minLength: 3 },
+      { field: "name", label: "Nama Lengkap Pengguna", value: form.name, required: true, minLength: 3 },
+      { field: "email", label: "Alamat Email", value: form.email, required: true, type: "email" },
+      { field: "role_id", label: "Hak Akses (Role)", value: form.role_id, required: true },
+      ...(dialogMode === "CREATE"
+        ? [{ field: "password", label: "Password Akun", value: form.password, required: true, minLength: 6 }]
+        : []),
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
@@ -475,10 +512,8 @@ export default function MasterUsersPage() {
                         [Pilih File Foto]
                         <input
                           type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) setImageFileName(e.target.files[0].name);
-                          }}
+                          accept=".png,.jpg,.jpeg"
+                          onChange={handleImageUpload}
                           className="hidden"
                         />
                       </label>
@@ -486,7 +521,7 @@ export default function MasterUsersPage() {
                         {imageFileName || "Belum ada foto"}
                       </span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">Upload foto profil pengguna sistem</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Upload foto profil pengguna sistem (.jpg, .png max 25MB)</p>
                   </div>
 
                   <div>
@@ -497,10 +532,8 @@ export default function MasterUsersPage() {
                         [Pilih File Tanda Tangan]
                         <input
                           type="file"
-                          accept="image/png,image/jpeg"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) setSignFileName(e.target.files[0].name);
-                          }}
+                          accept=".png,.jpg,.jpeg"
+                          onChange={handleSignUpload}
                           className="hidden"
                         />
                       </label>

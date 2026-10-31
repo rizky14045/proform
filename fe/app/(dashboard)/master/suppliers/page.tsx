@@ -27,6 +27,7 @@ import { masterService } from "@/services/modules.service";
 import { Supplier, PaginationMeta } from "@/types";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { DataTablePagination } from "@/components/data-table-pagination";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function MasterSuppliersPage() {
@@ -159,6 +160,20 @@ export default function MasterSuppliersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = validateForm([
+      { field: "code", label: "Kode Rekanan", value: form.code, required: true, minLength: 2 },
+      { field: "name", label: "Nama Rekanan", value: form.name, required: true, minLength: 3 },
+      { field: "email", label: "Email Supplier", value: form.email, type: "email" },
+      { field: "phone", label: "Nomor Telepon", value: form.phone, type: "phone" },
+      { field: "order_pic_email", label: "Email PIC Order", value: form.order_pic_email, type: "email" },
+      { field: "order_pic_phone", label: "Telepon PIC Order", value: form.order_pic_phone, type: "phone" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {

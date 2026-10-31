@@ -17,6 +17,7 @@ import (
 	"template/modules/supplier"
 	"template/modules/supplier_evaluation"
 	"template/modules/task_delegation"
+	"template/modules/upload"
 	"template/modules/user"
 	"template/modules/warehouse"
 
@@ -49,6 +50,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		task_delegation.SetupRoutes(api, db)
 		executive_docket.SetupRoutes(api, db)
 		report.SetupRoutes(api, db)
+		upload.SetupRoutes(api, db)
 	}
 
 	// Support both /api and /api/v1

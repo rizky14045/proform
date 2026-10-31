@@ -2,3 +2,5 @@ spesifikasi_arsitektur_revamp_interlogs.md
 *.txt
 *.json
 *.pdf
+/scripts/
+/uat_reports/

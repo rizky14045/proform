@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { inventorySubmoduleService, hpeService } from "@/services/modules.service";
 import { RKSAddendum, EngineeringEstimate } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function AdendumRKSPage() {
@@ -107,18 +109,23 @@ export default function AdendumRKSPage() {
     toast.success(`Dokumen ${est.ee_number} terpilih`);
   };
 
-  const handleUploadFile = () => {
-    if (!form.file_name) {
-      toast.error("Pilih file dokumen adendum terlebih dahulu!");
-      return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen Adendum RKS berhasil diunggah!");
   };
 
   const handleSubmit = async (actionType: "SAVE" | "SEND_FOR_APPROVAL") => {
-    if (!form.rks_id || !form.reason) {
-      toast.error("Lengkapi dokumen RKS dan alasan perubahan bertanda (*)");
+    const validation = validateForm([
+      { field: "rks_id", label: "Dokumen RKS Asal", value: form.rks_id, required: true },
+      { field: "reason", label: "Alasan Perubahan / Addendum", value: form.reason, required: true, minLength: 5 },
+      { field: "form_date", label: "Tanggal Form Adendum", value: form.form_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -377,27 +384,19 @@ export default function AdendumRKSPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.docx,.doc"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUploadFile}
-                  className="text-xs h-9 shrink-0 flex items-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5" /> Upload
-                </Button>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {form.file_name ? (
+                    <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi: {form.file_name}
+                    </span>
+                  ) : (
+                    "Maks. 25MB (PDF/DOCX)"
+                  )}
+                </span>
               </div>
               {form.file_name && (
                 <div className="flex items-center gap-2 text-xs">

@@ -15,6 +15,8 @@ import {
 import { Building2, Search, Plus, CheckCircle2, ShieldCheck, Upload, FileText, Calendar, DollarSign } from "lucide-react";
 import { poService, masterService } from "@/services/modules.service";
 import { BankGuarantee, PurchaseOrder, Supplier } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function BankGaransiPage() {
@@ -96,9 +98,25 @@ export default function BankGaransiPage() {
     await saveGuarantee(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedFile(res.fileName);
+    }
+  };
+
   const saveGuarantee = async (isPosted: boolean) => {
-    if (!form.bg_number || !form.issuing_bank || Number(form.amount) <= 0) {
-      toast.error("Nomor warkat, bank penerbit, dan nominal jaminan wajib diisi");
+    const validation = validateForm([
+      { field: "bg_number", label: "Nomor Warkat Bank Garansi", value: form.bg_number, required: true, minLength: 3 },
+      { field: "issuing_bank", label: "Nama Bank Penerbit", value: form.issuing_bank, required: true, minLength: 3 },
+      { field: "amount", label: "Nominal Jaminan Garansi", value: form.amount, required: true, type: "number", min: 1 },
+      { field: "effective_date", label: "Tanggal Mulai Berlaku", value: form.effective_date, required: true, type: "date" },
+      { field: "expiry_date", label: "Tanggal Berakhir Warkat", value: form.expiry_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -412,13 +430,8 @@ export default function BankGaransiPage() {
                     [Choose File / Pilih File]
                     <input
                       type="file"
-                      accept=".pdf,.jpg,.png"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedFile(e.target.files[0].name);
-                          toast.success(`File ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                      onChange={handleFileUpload}
                       className="hidden"
                     />
                   </label>

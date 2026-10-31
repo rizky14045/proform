@@ -32,6 +32,8 @@ import Link from "next/link";
 import { hpeService, masterService } from "@/services/modules.service";
 import { procurementService } from "@/services/procurement.service";
 import { EngineeringEstimate, ProcurementRequest, Supplier } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface HPEItemRow {
@@ -154,9 +156,27 @@ export default function HpeRksPage() {
   const ppnAmount = form.include_ppn ? Math.round(subtotalHPE * 0.11) : 0;
   const grandTotalHPE = subtotalHPE + ppnAmount;
 
+  const handleRefFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedRefFile(res.fileName);
+    }
+  };
+
   const handleSaveHPE = async (isSendApproval: boolean) => {
-    if (!form.request_id || hpeItems.length === 0) {
-      toast.error("Pilih paket usulan dan pastikan rincian item terisi");
+    const validation = validateForm([
+      { field: "hpe_number", label: "Nomor Dokumen HPE", value: form.hpe_number, required: true },
+      { field: "request_id", label: "Rujukan Usulan PPA", value: form.request_id, required: true },
+      { field: "procurement_method", label: "Metode Pengadaan", value: form.procurement_method, required: true },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+    if (hpeItems.length === 0) {
+      toast.error("Rincian item barang/jasa HPE tidak boleh kosong");
       return;
     }
     setIsSubmitting(true);
@@ -409,18 +429,19 @@ export default function HpeRksPage() {
                     [Choose File / Pilih File]
                     <input
                       type="file"
-                      accept=".pdf,.xlsx,.xls,.docx"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedRefFile(e.target.files[0].name);
-                          toast.success(`File referensi ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      accept=".pdf,.xlsx,.xls,.docx,.doc"
+                      onChange={handleRefFileUpload}
                       className="hidden"
                     />
                   </label>
                   <span className="text-xs text-muted-foreground font-mono">
-                    {uploadedRefFile || "Belum ada berkas referensi dipilih"}
+                    {uploadedRefFile ? (
+                      <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi: {uploadedRefFile}
+                      </span>
+                    ) : (
+                      "Belum ada berkas referensi dipilih (Maks. 25MB)"
+                    )}
                   </span>
                 </div>
               </div>

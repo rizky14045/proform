@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { gudangSubmoduleService, poService } from "@/services/modules.service";
 import { JobCompletion, PurchaseOrder } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface ServiceItem {
@@ -139,20 +141,23 @@ export default function PenyelesaianPekerjaanJasaPage() {
     toast.success(`PO ${p.po_number} dipilih`);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("Ukuran file melebihi batas 25 MB");
-      return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, uploaded_file_name: res.fileName }));
     }
-    setForm((prev) => ({ ...prev, uploaded_file_name: file.name }));
-    toast.success(`File ${file.name} berhasil diunggah`);
   };
 
   const handleSubmit = async (actionType: "DRAFT" | "SUBMITTED") => {
-    if (!form.po_id) {
-      toast.error("Rujukan Purchase Order wajib dipilih");
+    const validation = validateForm([
+      { field: "po_id", label: "Rujukan Purchase Order", value: form.po_id, required: true },
+      { field: "actual_handover_date", label: "Tanggal Serah Terima Pekerjaan", value: form.actual_handover_date, required: true, type: "date" },
+      { field: "sla_percentage", label: "Persentase Penyelesaian / SLA", value: form.sla_percentage, required: true, type: "percentage" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);

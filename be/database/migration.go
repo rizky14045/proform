@@ -18,6 +18,7 @@ import (
 	"template/modules/supplier"
 	"template/modules/supplier_evaluation"
 	"template/modules/task_delegation"
+	"template/modules/upload"
 	"template/modules/user"
 	"template/modules/warehouse"
 
@@ -119,6 +120,12 @@ func Migrate(db *gorm.DB) error {
 	// 11. Reports & Archives
 	if err := report.MigrateReport(db); err != nil {
 		log.Printf("[Migration Error] Gagal migrate Report: %v", err)
+		return err
+	}
+
+	// 12. Uploaded Files & Security Metadata
+	if err := upload.MigrateUpload(db); err != nil {
+		log.Printf("[Migration Error] Gagal migrate Upload: %v", err)
 		return err
 	}
 

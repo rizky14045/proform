@@ -28,6 +28,8 @@ import {
 import { inventorySubmoduleService, masterService } from "@/services/modules.service";
 import { procurementService } from "@/services/procurement.service";
 import { InventoryDistribution, ProcurementRequest, User } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function DistribusiPerencanaPage() {
@@ -123,18 +125,32 @@ export default function DistribusiPerencanaPage() {
     toast.success(`Pejabat ${u.name} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih file dokumen terlebih dahulu!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen penugasan berhasil diunggah!");
   };
 
   const handleSubmit = async (actionType: "SAVE" | "POST") => {
-    if (!form.request_id || !form.planner_user_id) {
-      toast.error("Silakan lengkapi paket pengadaan dan pejabat perencana bertanda (*)");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Paket Pengadaan", value: form.request_id, required: true },
+      { field: "planner_user_id", label: "Pejabat Perencana Terpilih", value: form.planner_user_id, required: true },
+      { field: "form_date", label: "Tanggal Form Distribusi", value: form.form_date, required: true, type: "date" },
+      { field: "target_date", label: "Target Selesai Penyusunan RKS/HPE", value: form.target_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -425,16 +441,8 @@ export default function DistribusiPerencanaPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

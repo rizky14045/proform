@@ -17,6 +17,8 @@ import { Shield, Search, Plus, CheckCircle2, Upload, FileText, Send, Building } 
 import { inventorySubmoduleService, masterService, hpeService } from "@/services/modules.service";
 import { procurementService } from "@/services/procurement.service";
 import { DirectAppointmentPermit, ProcurementRequest, Supplier, EngineeringEstimate } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function IzinPenunjukanLangsungPage() {
@@ -86,9 +88,24 @@ export default function IzinPenunjukanLangsungPage() {
     await savePermit(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedPermitFile(res.fileName);
+    }
+  };
+
   const savePermit = async (isSendApproval: boolean) => {
-    if (!form.hpe_id || !form.vendor_id || !form.justification) {
-      toast.error("Pilih dokumen HPE, rekanan yang ditunjuk, dan justifikasi");
+    const validation = validateForm([
+      { field: "hpe_id", label: "Dokumen Referensi HPE / RKS", value: form.hpe_id, required: true },
+      { field: "vendor_id", label: "Rekanan / Penyedia Ditunjuk", value: form.vendor_id, required: true },
+      { field: "justification", label: "Justifikasi Penunjukan Langsung", value: form.justification, required: true, minLength: 10 },
+      { field: "permit_date", label: "Tanggal Izin Penunjukan Langsung", value: form.permit_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -323,13 +340,8 @@ export default function IzinPenunjukanLangsungPage() {
                     [Choose File / Pilih File]
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedPermitFile(e.target.files[0].name);
-                          toast.success(`Berkas ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx"
+                      onChange={handleFileUpload}
                       className="hidden"
                     />
                   </label>

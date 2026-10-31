@@ -27,6 +27,8 @@ import { masterService } from "@/services/modules.service";
 import { MasterDocument, PaginationMeta } from "@/types";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { DataTablePagination } from "@/components/data-table-pagination";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function MasterDocumentsPage() {
@@ -106,16 +108,27 @@ export default function MasterDocumentsPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setUploadedFileName(file.name);
-      toast.success(`Template ${file.name} siap diunggah`);
+      const res = await uploadSecureFile(file);
+      if (res.success && res.fileName) {
+        setUploadedFileName(res.fileName);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = validateForm([
+      { field: "name", label: "Nama Template Dokumen", value: form.name, required: true, minLength: 3 },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const code = form.name.trim().toUpperCase().replace(/\s+/g, "_").slice(0, 30);

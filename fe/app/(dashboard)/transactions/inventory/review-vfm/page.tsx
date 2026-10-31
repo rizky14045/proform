@@ -16,6 +16,8 @@ import {
 import { TrendingUp, Search, Plus, Award, Upload, FileText, Send, CheckCircle2 } from "lucide-react";
 import { inventorySubmoduleService, masterService, hpeService } from "@/services/modules.service";
 import { VFMReviewInventory, EngineeringEstimate, User } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface VFMCriteria {
@@ -113,9 +115,23 @@ export default function ReviewVFMInventoryPage() {
     await saveReview(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedVFMFile(res.fileName);
+    }
+  };
+
   const saveReview = async (isSendApproval: boolean) => {
-    if (!form.hpe_id || !form.reviewer_id) {
-      toast.error("Pilih dokumen HPE/RKS rujukan dan penelaah VFM");
+    const validation = validateForm([
+      { field: "hpe_id", label: "Dokumen Referensi HPE / RKS", value: form.hpe_id, required: true },
+      { field: "reviewer_id", label: "Penelaah VFM", value: form.reviewer_id, required: true },
+      { field: "review_date", label: "Tanggal Review VFM", value: form.review_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -314,13 +330,8 @@ export default function ReviewVFMInventoryPage() {
                     [Choose File / Pilih File]
                     <input
                       type="file"
-                      accept=".pdf,.docx,.xlsx"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedVFMFile(e.target.files[0].name);
-                          toast.success(`Kajian VFM ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx"
+                      onChange={handleFileUpload}
                       className="hidden"
                     />
                   </label>

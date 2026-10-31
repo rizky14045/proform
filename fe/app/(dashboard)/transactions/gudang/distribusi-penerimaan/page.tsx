@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { gudangSubmoduleService, poService, masterService } from "@/services/modules.service";
 import { WarehouseDistribution, PurchaseOrder, User } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function DistribusiPenerimaanGudangPage() {
@@ -128,24 +130,24 @@ export default function DistribusiPenerimaanGudangPage() {
     toast.success(`Petugas ${u.name} dipilih`);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("Ukuran file melebihi batas maksimal 25 MB");
-      return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, uploaded_file_name: res.fileName }));
     }
-    setForm((prev) => ({ ...prev, uploaded_file_name: file.name }));
-    toast.success(`File ${file.name} berhasil diunggah`);
   };
 
   const handleSubmit = async (actionType: "DRAFT" | "POSTED") => {
-    if (!form.po_id) {
-      toast.error("Rujukan Purchase Order wajib dipilih");
-      return;
-    }
-    if (!form.officer_user_id) {
-      toast.error("Staf Penerima Gudang wajib ditentukan");
+    const validation = validateForm([
+      { field: "po_id", label: "Rujukan Purchase Order", value: form.po_id, required: true },
+      { field: "officer_user_id", label: "Staf Penerima Gudang", value: form.officer_user_id, required: true },
+      { field: "distribution_date", label: "Tanggal Form", value: form.distribution_date, required: true, type: "date" },
+      { field: "target_inspection_date", label: "Target Tanggal Pemeriksaan", value: form.target_inspection_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);

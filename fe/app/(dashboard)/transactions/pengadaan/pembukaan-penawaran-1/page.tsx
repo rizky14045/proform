@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, masterService } from "@/services/modules.service";
 import { QuotationRequest, Supplier } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface BidOpeningItem {
@@ -134,13 +136,21 @@ export default function PembukaanPenawaran1SampulPage() {
     toast.success(`Dokumen PP ${q.rfq_number} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih file Berita Acara Pembukaan terlebih dahulu!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen Berita Acara Pembukaan berhasil diunggah!");
   };
 
   const handleAddBidder = () => {
@@ -172,8 +182,18 @@ export default function PembukaanPenawaran1SampulPage() {
   };
 
   const handleSubmit = async (actionType: "SAVE" | "POST") => {
-    if (!form.request_id || bidders.length === 0) {
-      toast.error("Silakan lengkapi dokumen PP dan minimal 1 penawaran rekanan");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Dokumen Permintaan Penawaran (PP)", value: form.request_id, required: true },
+      { field: "form_number", label: "Nomor Berita Acara Pembukaan", value: form.form_number, required: true, minLength: 3 },
+      { field: "work_title", label: "Nama Pekerjaan Pengadaan", value: form.work_title, required: true, minLength: 5 },
+      { field: "form_date", label: "Tanggal Pembukaan Penawaran", value: form.form_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+    if (bidders.length === 0) {
+      toast.error("Minimal harus ada 1 rekanan penawar yang dimasukkan");
       return;
     }
     setIsSubmitting(true);
@@ -423,16 +443,8 @@ export default function PembukaanPenawaran1SampulPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

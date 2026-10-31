@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, masterService } from "@/services/modules.service";
 import { QuotationRequest, Supplier } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function HasilPengadaanPage() {
@@ -127,18 +129,33 @@ export default function HasilPengadaanPage() {
     toast.success(`Rekanan ${s.name} dipilih sebagai Calon Pemenang`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih berkas Berita Acara Hasil Pengadaan (BAHP)!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen BAHP berhasil diunggah!");
   };
 
   const handleSubmit = async (actionType: "SAVE" | "SEND_FOR_APPROVAL") => {
-    if (!form.request_id || !form.winner_vendor_id) {
-      toast.error("Silakan lengkapi dokumen PP dan rekanan pemenang bertanda (*)");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Dokumen Permintaan Penawaran (PP)", value: form.request_id, required: true },
+      { field: "form_number", label: "Nomor Berita Acara Hasil Pengadaan", value: form.form_number, required: true, minLength: 3 },
+      { field: "winner_vendor_id", label: "Rekanan Calon Pemenang", value: form.winner_vendor_id, required: true },
+      { field: "form_date", label: "Tanggal Penetapan BAHP", value: form.form_date, required: true, type: "date" },
+      { field: "final_contract_amount", label: "Nilai Final Kesepakatan Kontrak", value: form.final_contract_amount, required: true, type: "number", min: 1 },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -412,16 +429,8 @@ export default function HasilPengadaanPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

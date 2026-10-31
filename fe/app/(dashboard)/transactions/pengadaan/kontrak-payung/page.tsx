@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, masterService } from "@/services/modules.service";
 import { UmbrellaContract, Supplier, QuotationRequest } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface UmbrellaItem {
@@ -156,13 +158,21 @@ export default function KontrakPayungPage() {
     toast.success(`Rekanan ${s.name} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih file berkas Kontrak Payung terlebih dahulu!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen Kontrak Payung berhasil diunggah!");
   };
 
   const handleAddItem = () => {
@@ -198,8 +208,19 @@ export default function KontrakPayungPage() {
   };
 
   const handleSubmit = async (actionType: "SAVE" | "SEND_FOR_APPROVAL") => {
-    if (!form.vendor_id || !form.title) {
-      toast.error("Lengkapi judul kontrak dan rekanan bertanda (*)");
+    const validation = validateForm([
+      { field: "contract_number", label: "Nomor Kontrak Payung", value: form.contract_number, required: true, minLength: 3 },
+      { field: "title", label: "Judul Kontrak Payung", value: form.title, required: true, minLength: 5 },
+      { field: "vendor_id", label: "Rekanan / Penyedia Terpilih", value: form.vendor_id, required: true },
+      { field: "start_date", label: "Tanggal Mulai Kontrak", value: form.start_date, required: true, type: "date" },
+      { field: "end_date", label: "Tanggal Akhir Masa Berlaku", value: form.end_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Minimal harus ada 1 item komoditas kontrak payung");
       return;
     }
     setIsSubmitting(true);
@@ -516,16 +537,8 @@ export default function KontrakPayungPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

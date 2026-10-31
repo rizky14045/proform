@@ -16,6 +16,8 @@ import { ClipboardList, Search, Plus, UserCheck, Upload, FileText, Send, Calenda
 import { usersSubmoduleService, masterService } from "@/services/modules.service";
 import { procurementService } from "@/services/procurement.service";
 import { RequestDistribution, ProcurementRequest, User } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function DistribusiPermintaanUserPage() {
@@ -90,9 +92,23 @@ export default function DistribusiPermintaanUserPage() {
     await saveDistribution(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedFile(res.fileName);
+    }
+  };
+
   const saveDistribution = async (isPosted: boolean) => {
-    if (!form.request_id || !form.assigned_to_user_id) {
-      toast.error("Pilih usulan permintaan dan staf tujuan disposisi");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Usulan Permintaan", value: form.request_id, required: true },
+      { field: "assigned_to_user_id", label: "Staf Tujuan Disposisi", value: form.assigned_to_user_id, required: true },
+      { field: "form_date", label: "Tanggal Form Distribusi", value: form.form_date, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -310,13 +326,8 @@ export default function DistribusiPermintaanUserPage() {
                     [Choose File / Pilih File]
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedFile(e.target.files[0].name);
-                          toast.success(`Dokumen ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx"
+                      onChange={handleFileUpload}
                       className="hidden"
                     />
                   </label>

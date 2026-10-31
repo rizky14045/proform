@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { poService, pengadaanSubmoduleService, masterService } from "@/services/modules.service";
 import { PurchaseOrder, QuotationRequest, Supplier } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface PODetailItem {
@@ -193,13 +195,13 @@ export default function PurchaseOrderPage() {
     toast.success(`Rekanan ${s.name} terpilih`);
   };
 
-  const handleUploadFile = () => {
-    if (!form.file_name) {
-      toast.error("Pilih file dokumen Purchase Order!");
-      return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen Kontrak Purchase Order berhasil diunggah!");
   };
 
   const handleAddItem = () => {
@@ -256,8 +258,18 @@ export default function PurchaseOrderPage() {
   };
 
   const handleSubmit = async (actionType: "SAVE" | "SEND_FOR_APPROVAL") => {
-    if (!form.po_number || !form.supplier_id || items.length === 0) {
-      toast.error("Silakan lengkapi nomor PO, rekanan, dan minimal 1 item barang (*)");
+    const validation = validateForm([
+      { field: "po_number", label: "Nomor Purchase Order", value: form.po_number, required: true },
+      { field: "supplier_id", label: "Rekanan / Vendor", value: form.supplier_id, required: true },
+      { field: "po_date", label: "Tanggal Purchase Order", value: form.po_date, required: true, type: "date" },
+      { field: "delivery_deadline", label: "Batas Akhir Penyerahan / Delivery", value: form.delivery_deadline, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Tambahkan minimal 1 item barang / jasa pada Purchase Order (*)");
       return;
     }
     setIsSubmitting(true);
@@ -630,27 +642,19 @@ export default function PurchaseOrderPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUploadFile}
-                  className="text-xs h-9 shrink-0 flex items-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5" /> Upload
-                </Button>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {form.file_name ? (
+                    <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi: {form.file_name}
+                    </span>
+                  ) : (
+                    "Maks. 25MB (PDF/DOCX/XLSX)"
+                  )}
+                </span>
               </div>
               {form.file_name && (
                 <div className="flex items-center gap-2 text-xs">

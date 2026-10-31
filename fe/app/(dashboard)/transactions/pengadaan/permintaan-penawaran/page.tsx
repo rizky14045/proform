@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, oeService, masterService } from "@/services/modules.service";
 import { QuotationRequest, OwnerEstimate, Supplier } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function PermintaanPenawaranRFQPage() {
@@ -128,18 +130,33 @@ export default function PermintaanPenawaranRFQPage() {
     toast.success(`Rekanan ${s.name} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih file dokumen RKS / Lampiran terlebih dahulu!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen lampiran penawaran berhasil diunggah!");
   };
 
   const handleSubmit = async (actionType: "SAVE" | "POST") => {
-    if (!form.request_id || !form.work_title) {
-      toast.error("Silakan lengkapi dokumen HPS dan judul pekerjaan bertanda (*)");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Dokumen Rujukan HPS", value: form.request_id, required: true },
+      { field: "form_number", label: "Nomor Permintaan Penawaran (RFQ)", value: form.form_number, required: true, minLength: 3 },
+      { field: "work_title", label: "Judul Pekerjaan Pengadaan", value: form.work_title, required: true, minLength: 5 },
+      { field: "form_date", label: "Tanggal Form RFQ", value: form.form_date, required: true, type: "date" },
+      { field: "submission_deadline", label: "Batas Akhir Pemasukan Dokumen", value: form.submission_deadline, required: true, type: "date" },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -433,16 +450,8 @@ export default function PermintaanPenawaranRFQPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button

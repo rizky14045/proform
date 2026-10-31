@@ -16,6 +16,8 @@ import { FileCheck, Search, Plus, CheckCircle2, Upload, FileText, Check, X } fro
 import { usersSubmoduleService, masterService } from "@/services/modules.service";
 import { procurementService } from "@/services/procurement.service";
 import { TechnicalEvaluation, ProcurementRequest, User } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 interface TechEvalRow {
@@ -118,9 +120,24 @@ export default function EvaluasiTeknisUserPage() {
     await saveEvaluation(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setUploadedFile(res.fileName);
+    }
+  };
+
   const saveEvaluation = async (isPosted: boolean) => {
-    if (!form.request_id || !form.evaluator_id) {
-      toast.error("Pilih paket pengadaan dan pejabat evaluator");
+    const validation = validateForm([
+      { field: "request_id", label: "Pilihan Usulan Permintaan Pengadaan", value: form.request_id, required: true },
+      { field: "evaluator_id", label: "Pejabat Penilai Evaluasi Teknis", value: form.evaluator_id, required: true },
+      { field: "form_date", label: "Tanggal Form Evaluasi", value: form.form_date, required: true, type: "date" },
+      { field: "score", label: "Nilai Skor Evaluasi Teknis", value: form.score, required: true, type: "number", min: 0, max: 100 },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -336,13 +353,8 @@ export default function EvaluasiTeknisUserPage() {
                     [Choose File / Pilih File]
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedFile(e.target.files[0].name);
-                          toast.success(`File ${e.target.files[0].name} siap diunggah`);
-                        }
-                      }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx"
+                      onChange={handleFileUpload}
                       className="hidden"
                     />
                   </label>

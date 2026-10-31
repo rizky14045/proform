@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { pengadaanSubmoduleService, poService } from "@/services/modules.service";
 import { POAddendum, PurchaseOrder } from "@/types";
+import { uploadSecureFile } from "@/lib/file-security";
+import { validateForm } from "@/lib/form-validator";
 import toast from "react-hot-toast";
 
 export default function AddendumPOPage() {
@@ -118,18 +120,32 @@ export default function AddendumPOPage() {
     toast.success(`Dokumen PO ${p.po_number} terpilih`);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await uploadSecureFile(file);
+    if (res.success && res.fileName) {
+      setForm((prev) => ({ ...prev, file_name: res.fileName, file_uploaded: true }));
+    }
+  };
+
   const handleUploadFile = () => {
     if (!form.file_name) {
-      toast.error("Pilih berkas dokumen Addendum PO terlebih dahulu!");
-      return;
+      toast.error("Pilih file terlebih dahulu");
+    } else {
+      toast.success("File telah lolos verifikasi keamanan dan tersimpan");
     }
-    setForm((prev) => ({ ...prev, file_uploaded: true }));
-    toast.success("Dokumen Addendum PO berhasil diunggah!");
   };
 
   const handleSubmit = async (actionType: "SAVE" | "SEND_FOR_APPROVAL") => {
-    if (!form.po_id || !form.reason) {
-      toast.error("Silakan pilih dokumen PO asal dan isi alasan addendum bertanda (*)");
+    const validation = validateForm([
+      { field: "po_id", label: "Pilihan Purchase Order (PO)", value: form.po_id, required: true },
+      { field: "addendum_number", label: "Nomor Dokumen Addendum PO", value: form.addendum_number, required: true, minLength: 3 },
+      { field: "form_date", label: "Tanggal Addendum PO", value: form.form_date, required: true, type: "date" },
+      { field: "reason", label: "Alasan Perubahan / Addendum PO", value: form.reason, required: true, minLength: 5 },
+    ]);
+    if (!validation.valid) {
+      toast.error(validation.errors[0]);
       return;
     }
     setIsSubmitting(true);
@@ -404,16 +420,8 @@ export default function AddendumPOPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Input
                   type="file"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      if (f.size > 25 * 1024 * 1024) {
-                        toast.error("Ukuran file melebihi batas maksimal 25MB");
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, file_name: f.name, file_uploaded: false }));
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileUpload}
                   className="text-xs h-9 bg-background file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
                 <Button
